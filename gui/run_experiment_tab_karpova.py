@@ -45,7 +45,7 @@ class Run_experiment_tab(QtGui.QWidget):
         self.scroll_area = QtGui.QScrollArea(parent=self)
         self.scroll_area.horizontalScrollBar().setEnabled(False)
         self.scroll_inner = QtGui.QFrame(self)
-        self.boxes_layout = QtGui.QVBoxLayout(self.scroll_inner)
+        self.boxes_layout = QtGui.QGridLayout(self.scroll_inner)
         self.scroll_area.setWidget(self.scroll_inner)
         self.scroll_area.setWidgetResizable(True)
 
@@ -80,7 +80,11 @@ class Run_experiment_tab(QtGui.QWidget):
         for i,subject in enumerate(sorted(subjects)):
             self.subjectboxes.append(
                 Subjectbox('{} : {}'.format(subject_dict[subject]['Setup'], subject), i, self))
-            self.boxes_layout.addWidget(self.subjectboxes[-1])
+            if i<2:
+                row = 0
+            else:
+                row = 1
+            self.boxes_layout.addWidget(self.subjectboxes[-1],row,i-2*row)
         # Create data folder if needed.
         if not os.path.exists(self.experiment['data_dir']):
             os.mkdir(self.experiment['data_dir'])        
