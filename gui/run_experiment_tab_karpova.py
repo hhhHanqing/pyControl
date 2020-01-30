@@ -80,11 +80,11 @@ class Run_experiment_tab(QtGui.QWidget):
         for i,subject in enumerate(sorted(subjects)):
             self.subjectboxes.append(
                 Subjectbox('{} : {}'.format(subject_dict[subject]['Setup'], subject), i, self))
-            if i<2:
+            if i<3:
                 row = 0
             else:
                 row = 1
-            self.boxes_layout.addWidget(self.subjectboxes[-1],row,i-2*row)
+            self.boxes_layout.addWidget(self.subjectboxes[-1],row,i-3*row)
         # Create data folder if needed.
         if not os.path.exists(self.experiment['data_dir']):
             os.mkdir(self.experiment['data_dir'])        
@@ -338,8 +338,6 @@ class Subjectbox(QtGui.QGroupBox):
         self.time_text = QtGui.QLineEdit()
         self.time_text.setReadOnly(True)
         self.time_text.setFixedWidth(60)
-        self.variables_button = QtGui.QPushButton('Variables')
-        self.variables_button.setEnabled(False)
         self.log_textbox = QtGui.QTextEdit()
         self.log_textbox.setMinimumHeight(180)
         self.log_textbox.setFont(QtGui.QFont('Courier', 9))
@@ -350,7 +348,7 @@ class Subjectbox(QtGui.QGroupBox):
         self.Hlayout.addWidget(self.start_stop_button)
         self.Hlayout.addWidget(self.time_label)
         self.Hlayout.addWidget(self.time_text)
-        self.Hlayout.addWidget(self.variables_button)
+        self.Hlayout.addStretch(1)
         self.Vlayout.addLayout(self.Hlayout)
         self.Vlayout.addWidget(self.log_textbox)
         
@@ -363,8 +361,9 @@ class Subjectbox(QtGui.QGroupBox):
     def assign_board(self, board):
         self.board = board
         self.variables_dialog = Variables_dialog(self, board)
-        self.variables_button.clicked.connect(self.variables_dialog.exec_)
-        self.variables_button.setEnabled(True)
+        self.variables_box= QtGui.QGroupBox('Variables')
+        self.variables_box.setLayout(self.variables_dialog.layout)
+        self.Vlayout.addWidget(self.variables_box)
         self.start_stop_button.clicked.connect(self.start_stop_rig)
 
     def start_stop_rig(self):
@@ -401,7 +400,6 @@ class Subjectbox(QtGui.QGroupBox):
             self.board.stop_framework()
         self.run_exp_tab.experiment_plot.active_plots.remove(self.boxNum)
         self.run_exp_tab.setups_finished += 1
-        self.variables_button.setEnabled(False)
 
     def process_data(self, new_data):
         pass
