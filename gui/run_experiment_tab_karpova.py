@@ -281,13 +281,11 @@ class Run_experiment_tab(QtGui.QWidget):
         if self.logs_visible:
             for subjectbox in self.subjectboxes:
                 subjectbox.log_textbox.hide()
-            self.boxes_layout.addStretch(100)
             self.logs_visible = False
             self.logs_button.setText('Show logs')
         else:
             for subjectbox in self.subjectboxes:
                 subjectbox.log_textbox.show()
-            self.boxes_layout.takeAt(self.boxes_layout.count()-1) # Remove stretch.
             self.logs_visible = True
             self.logs_button.setText('Hide logs')
 
@@ -404,3 +402,6 @@ class Subjectbox(QtGui.QGroupBox):
         self.run_exp_tab.experiment_plot.active_plots.remove(self.boxNum)
         self.run_exp_tab.setups_finished += 1
         self.variables_button.setEnabled(False)
+
+    def process_data(self, new_data):
+        pass
