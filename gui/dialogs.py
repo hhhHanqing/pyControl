@@ -1,11 +1,12 @@
 import os
 import json
 
-from pyqtgraph.Qt import QtGui, QtCore
+from pyqtgraph.Qt import QtGui, QtCore, QtWidgets
 
 from config.paths import dirs, update_paths
 from gui.utility import variable_constants
 
+from gui.markov_variable_dialog import *
 # Board_config_dialog -------------------------------------------------
 
 flashdrive_message = (
@@ -81,12 +82,18 @@ class Variables_dialog(QtGui.QDialog):
     def __init__(self, parent, board):
         super(QtGui.QDialog, self).__init__(parent)
         self.setWindowTitle('Set variables')
-        self.scroll_area = QtGui.QScrollArea(parent=self)
-        self.scroll_area.setWidgetResizable(True)
-        self.variables_grid = Variables_grid(self.scroll_area, board)
-        self.scroll_area.setWidget(self.variables_grid)
         self.layout = QtGui.QVBoxLayout(self)
-        self.layout.addWidget(self.scroll_area)
+        if board.sm_info['name'] == 'markov':
+            self.setWindowTitle('Markov Variable Setter')
+            self.variables_grid = Variables_grid(self, board)
+            self.layout.addWidget(self.variables_grid)
+            self.layout.setContentsMargins(0,0,0,0)
+        else:
+            self.scroll_area = QtGui.QScrollArea(parent=self)
+            self.scroll_area.setWidgetResizable(True)
+            self.variables_grid = Variables_grid(self.scroll_area, board)
+            self.scroll_area.setWidget(self.variables_grid)
+            self.layout.addWidget(self.scroll_area) 
         self.setLayout(self.layout)
 
 class Variables_grid(QtGui.QWidget):
@@ -95,10 +102,15 @@ class Variables_grid(QtGui.QWidget):
         super(QtGui.QWidget, self).__init__(parent)
         variables = board.sm_info['variables']
         self.grid_layout = QtGui.QGridLayout()
-        for i, (v_name, v_value_str) in enumerate(sorted(variables.items())):
-            if not v_name[-3:] == '___':
-                Variable_setter(v_name, v_value_str, self.grid_layout, i, self, board)
+        if  board.sm_info['name'] == 'markov':
+            initial_variables_dict = {v_name:v_value_str for (v_name, v_value_str) in sorted(variables.items())}
+            Markov_setter(self.grid_layout, self, board,initial_variables_dict)
+        else:
+            for i, (v_name, v_value_str) in enumerate(sorted(variables.items())):
+                if '___' not in (v_name):
+                    Variable_setter(v_name, v_value_str, self.grid_layout, i, self, board)
         self.setLayout(self.grid_layout)
+
 
 class Variable_setter(QtGui.QWidget):
     # For setting and getting a single variable.
