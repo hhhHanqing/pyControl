@@ -71,6 +71,7 @@ class Run_experiment_tab(QtGui.QWidget):
         self.startstopclose_all_button.setText('Start All')
         # Setup controls box.
         self.name_text.setText(experiment['name'])
+        self.startstopclose_all_button.setEnabled(False)
         self.logs_button.setEnabled(False)
         self.plots_button.setEnabled(False)
         # Setup subjectboxes
@@ -193,8 +194,10 @@ class Run_experiment_tab(QtGui.QWidget):
             self.subjectboxes[i].start_stop_button.setEnabled(True)
         self.logs_button.setEnabled(True)
         self.plots_button.setEnabled(True)
+        self.startstopclose_all_button.setEnabled(True)
         self.setups_finished = 0
         self.setups_running  = 0
+        self.show_hide_logs()
 
     def startstopclose_all(self):
         if self.setups_running == 0:
