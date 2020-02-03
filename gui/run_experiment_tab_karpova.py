@@ -80,7 +80,7 @@ class Run_experiment_tab(QtGui.QWidget):
 
         for i,subject in enumerate(sorted(subjects)):
             self.subjectboxes.append(
-                Subjectbox('{} : {}'.format(subject_dict[subject]['Setup'], subject), i, self))
+                Subjectbox('{} ---- {}'.format(subject_dict[subject]['Setup'], subject), i, self))
             if i<3:
                 row = 0
             else:
@@ -228,7 +228,6 @@ class Run_experiment_tab(QtGui.QWidget):
             subject_pvs = [v for v in board.subject_variables if v['persistent']]
             if subject_pvs:
                 board.print('\nStoring persistent variables.')
-                print('{}: storing persistent varibales'.format(board.subject))
                 persistent_variables[board.subject] = {
                     v['name']: board.get_variable(v['name']) for v in subject_pvs}
             # Read summary variables.
@@ -326,12 +325,15 @@ class Subjectbox(QtGui.QGroupBox):
 
     def __init__(self, name, boxNum, parent=None):
 
-        super(QtGui.QGroupBox, self).__init__(name, parent=parent)
+        super(QtGui.QGroupBox, self).__init__("", parent=parent)
         self.board = None # Overwritten with board once instantiated.
         self.GUI_main = self.parent().GUI_main
         self.run_exp_tab = self.parent()
         self.state = 'pre_run'
         self.boxNum = boxNum
+
+        self.boxTitle = QtGui.QLabel(name)
+        self.boxTitle.setStyleSheet("font:30pt")
 
         self.start_stop_button = QtGui.QPushButton('Start')
         self.start_stop_button.setEnabled(False)
@@ -346,6 +348,7 @@ class Subjectbox(QtGui.QGroupBox):
 
         self.Vlayout = QtGui.QVBoxLayout(self)
         self.Hlayout = QtGui.QHBoxLayout()
+        self.Hlayout.addWidget(self.boxTitle)
         self.Hlayout.addWidget(self.start_stop_button)
         self.Hlayout.addWidget(self.time_label)
         self.Hlayout.addWidget(self.time_text)
@@ -395,12 +398,14 @@ class Subjectbox(QtGui.QGroupBox):
 
     def task_stopped(self):
         '''Called when task stops running.'''
-        self.start_stop_button.setVisible(False)
         # Stop running board
         if self.board.framework_running:
             self.board.stop_framework()
         self.run_exp_tab.experiment_plot.active_plots.remove(self.boxNum)
         self.run_exp_tab.setups_finished += 1
+        self.start_stop_button.setVisible(False)
+        for widget in (self.boxTitle, self.time_label, self.time_text, self.variables_box):
+            widget.setEnabled(False)
 
     def process_data(self, new_data):
         pass
