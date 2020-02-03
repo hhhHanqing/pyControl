@@ -482,10 +482,14 @@ class Experiment_plot(QtGui.QMainWindow):
         '''Create task plotters in seperate tabs for each subject.'''
         subject_dict = experiment['subjects']
         subjects = subject_dict.keys()
-        for subject in sorted(subjects):
+        setup_subject_pairs = {}
+        for subject in subjects:
+            setup_subject_pairs[subject_dict[subject]['Setup']] = subject
+        # Add plot tabs in order of setup name
+        for key in sorted(setup_subject_pairs.keys()):
             self.subject_plots.append(Task_plot(self))
             self.subject_tabs.addTab(self.subject_plots[-1],
-                '{} : {}'.format(subject_dict[subject]['Setup'], subject))
+                '{} : {}'.format(key, setup_subject_pairs[key]))
 
     def set_state_machine(self, sm_info):
         '''Provide the task plotters with the state machine info.'''

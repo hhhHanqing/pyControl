@@ -78,9 +78,13 @@ class Run_experiment_tab(QtGui.QWidget):
         subject_dict = experiment['subjects']
         subjects = subject_dict.keys()
 
-        for i,subject in enumerate(sorted(subjects)):
+        setup_subject_pairs = {}
+        for subject in subjects:
+            setup_subject_pairs[subject_dict[subject]['Setup']] = subject
+
+        for i,key in enumerate(sorted(setup_subject_pairs.keys())):
             self.subjectboxes.append(
-                Subjectbox('{} ---- {}'.format(subject_dict[subject]['Setup'], subject), i, self))
+                Subjectbox('{} ---- {}'.format(key,setup_subject_pairs[key]), i, self))
             if i<3:
                 row = 0
             else:
@@ -101,9 +105,9 @@ class Run_experiment_tab(QtGui.QWidget):
         self.GUI_main.app.processEvents()
         self.boards = []
         
-        for i, subject in enumerate(sorted(subjects)):
+        for i,key in enumerate(sorted(setup_subject_pairs.keys())):
             print_func = self.subjectboxes[i].print_to_log
-            serial_port = self.GUI_main.setups_tab.get_port(subject_dict[subject]['Setup'])
+            serial_port = self.GUI_main.setups_tab.get_port(key)
             # Connect to boards.
             print_func('Connecting to board.. ')
             try:
@@ -116,8 +120,8 @@ class Run_experiment_tab(QtGui.QWidget):
                 print_func('\nInstall pyControl framework on board before running experiment.')
                 self.abort_experiment()
                 return                
-            self.boards[i].subject = subject
-            self.boards[i].board = subject_dict[subject]['Setup']
+            self.boards[i].subject = setup_subject_pairs[key]
+            self.boards[i].board =  key
         # Hardware test.
         if experiment['hardware_test'] != 'no hardware test':
             reply = QtGui.QMessageBox.question(self, 'Hardware test', 'Run hardware test?',
