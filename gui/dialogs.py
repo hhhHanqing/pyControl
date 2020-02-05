@@ -109,6 +109,7 @@ class Variables_grid(QtGui.QWidget):
             for i, (v_name, v_value_str) in enumerate(sorted(variables.items())):
                 if '___' not in (v_name):
                     Variable_setter(v_name, v_value_str, self.grid_layout, i, self, board)
+            self.grid_layout.setRowStretch(i,1) # prevents rows of variables from be spread evenly to fill vertical space. 
         self.setLayout(self.grid_layout)
 
 
