@@ -85,11 +85,12 @@ class Run_experiment_tab(QtGui.QWidget):
         for i,key in enumerate(sorted(setup_subject_pairs.keys())):
             self.subjectboxes.append(
                 Subjectbox('{} ---- {}'.format(key,setup_subject_pairs[key]), i, self))
-            if i<3:
+            position = int(key.split('.')[-1])-1
+            if position<5:
                 row = 0
             else:
                 row = 1
-            self.boxes_layout.addWidget(self.subjectboxes[-1],row,i-3*row)
+            self.boxes_layout.addWidget(self.subjectboxes[-1],row,position-5*row)
         # Create data folder if needed.
         if not os.path.exists(self.experiment['data_dir']):
             os.mkdir(self.experiment['data_dir'])        
@@ -337,7 +338,7 @@ class Subjectbox(QtGui.QGroupBox):
         self.boxNum = boxNum
 
         self.boxTitle = QtGui.QLabel(name)
-        self.boxTitle.setStyleSheet("font:30pt")
+        self.boxTitle.setStyleSheet("font:15pt;color:blue;")
 
         self.start_stop_button = QtGui.QPushButton('Start')
         self.start_stop_button.setEnabled(False)
