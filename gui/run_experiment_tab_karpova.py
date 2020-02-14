@@ -43,7 +43,6 @@ class Run_experiment_tab(QtGui.QWidget):
         self.Hlayout.addWidget(self.startstopclose_all_button)
 
         self.scroll_area = QtGui.QScrollArea(parent=self)
-        self.scroll_area.horizontalScrollBar().setEnabled(False)
         self.scroll_inner = QtGui.QFrame(self)
         self.boxes_layout = QtGui.QGridLayout(self.scroll_inner)
         self.scroll_area.setWidget(self.scroll_inner)
