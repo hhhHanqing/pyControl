@@ -79,15 +79,30 @@ class Markov_setter(QtGui.QWidget):
         self.laser_probability.add_to_grid(self.laser_layout,2)
         self.laser_group.setLayout(self.laser_layout)
 
-        grid_layout.addWidget(self.left_right_box,0,0,1,2)
-        grid_layout.addWidget(self.other_box,1,0)
-        grid_layout.addWidget(self.laser_group,2,0)
+        self.cerebro_group = QtGui.QGroupBox('Cerebro')
+        self.cerebro_layout = QtGui.QGridLayout()
+        self.single_shot = QtGui.QRadioButton('Single Shot')
+        self.pulse_train = QtGui.QRadioButton('Pulse Train')
+        self.start_delay = single_var(init_vars,'<b>Start Delay</b>',0,65.535,0.05,' s', 'start_delay')
+        self.send_waveform_btn = QtGui.QPushButton('Send New Waveform Parameters')
+        self.cerebro_layout.addWidget(self.single_shot,0,0)
+        self.cerebro_layout.addWidget(self.pulse_train,0,1)
+        self.start_delay.add_to_grid(self.cerebro_layout,1)
+        self.cerebro_layout.addWidget(self.send_waveform_btn,2,0,1,2)
+        self.cerebro_group.setLayout(self.cerebro_layout)
+
+
+        grid_layout.addWidget(self.left_right_box,0,0,1,4)
+        grid_layout.addWidget(self.other_box,1,0,1,3)
+        grid_layout.addWidget(self.laser_group,2,0,1,2)
+        grid_layout.addWidget(self.cerebro_group,3,0)
         grid_layout.setColumnStretch(9,1)
         grid_layout.setRowStretch(10,1)
 
         self.laser_checkbox.clicked.connect(self.update_laser)
         self.with_tone.clicked.connect(self.update_laser)
         self.with_collection.clicked.connect(self.update_laser)
+        self.send_waveform_btn.clicked.connect(self.send_waveform_parameters)
 
     def update_laser(self):
         self.with_collection.setEnabled(self.laser_checkbox.isChecked())
@@ -108,6 +123,11 @@ class Markov_setter(QtGui.QWidget):
         if self.board.framework_running:
             self.board.set_variable('continuous_tone___',self.tone_checkbox.isChecked())
 
+    def send_waveform_parameters(self):
+        if self.board.framework_running: # Value returned later.
+            self.board.exec('fw.hw.Cpoke.LED.toggle()')
+        else:
+            self.board.exec('smd.hw.Cpoke.LED.toggle()')
 class left_right_vars():
     def __init__(self,initial_vars_dict,label,min,max,step,suffix,varname=''):
         center = QtCore.Qt.AlignCenter

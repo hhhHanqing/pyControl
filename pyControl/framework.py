@@ -205,13 +205,15 @@ def output_data(event):
         checksum  = (sum(data_len + timestamp) + sum(data_bytes)).to_bytes(2, 'little')
         usb_serial.send(start_byte + data_len + timestamp + checksum + data_bytes)
 
-def recieve_data():
+def receive_data():
     # Read and process data from computer.
     global running
     new_byte = usb_serial.read(1) 
     if new_byte == b'\x03': # Serial command to stop run.
         running = False
     elif new_byte == b'V': # Get/set variables command.
+        state_machine.print('bob')
+        state_machine.smd.hw.Cpoke.LED.toggle()
         data_len = int.from_bytes(usb_serial.read(2), 'little')
         data = usb_serial.read(data_len)
         checksum = int.from_bytes(usb_serial.read(2), 'little')
@@ -256,7 +258,7 @@ def _update():
             running = False
 
     elif usb_serial.any(): # Priority 5: Check for serial input from computer.
-        recieve_data()
+        receive_data()
 
     elif hw.stream_data_queue.available: # Priority 6: Stream analog data.
         hw.IO_dict[hw.stream_data_queue.get()]._process_streaming()

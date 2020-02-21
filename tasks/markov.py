@@ -61,6 +61,9 @@ v.laser_probability = .25
 v.laser_with_tone = False
 v.laser_with_collection = False
 
+#Cerebro variables
+v.start_delay = 0
+
 initial_state = 'waiting_for_initiation_center'
 
 def run_start():
@@ -78,9 +81,10 @@ def waiting_for_initiation_center(event):
     if event == 'entry':
         hw.Cpoke.LED.on()
     elif event == 'C_nose':
-        if v.laser_with_collection and v.laser_trial___:
-            hw.BaseStation.stop()
-        new_trial()
+        hw.Cpoke.LED.toggle()
+        # if v.laser_with_collection and v.laser_trial___:
+            # hw.BaseStation.stop()
+        # new_trial()
 
 def offering_left(event):
     if event == 'entry':
