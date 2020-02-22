@@ -434,3 +434,20 @@ class Pycboard(Pyboard):
         else: # Get variable using REPL.
             return eval(self.eval("state_machine._get_variable({})"
                                   .format(repr(v_name))).decode())
+
+
+    # ------------------------------------------------------------------------------------
+    #Base Station Communication
+    # ------------------------------------------------------------------------------------
+    def set_waveform(self,start_delay,on_time,off_time,train_dur,ramp_dur):
+        start_str = repr(int(1000*start_delay))
+        on_str = repr(int(1000*on_time))
+        off_str = repr(int(1000*off_time))
+        train_str = repr(int(1000*train_dur))
+        ramp_str = repr(int(1000*ramp_dur))
+        if self.framework_running: # Set variable with serial command.
+            data = repr('{},{},{},{},{}'.format(start_str,on_str,off_str,train_str,ramp_str)).encode() + b's'
+            data_len = len(data).to_bytes(2, 'little')
+            checksum = sum(data).to_bytes(2, 'little')
+            self.serial.write(b'W' + data_len + data + checksum)
+            return None

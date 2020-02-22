@@ -4,8 +4,8 @@ from machine import UART
 class Base_station_serial():
     def __init__(self, port):
         assert port.UART is not None, '! Base Station needs port with UART.'
-        self.uart = UART(port.UART, 115200)
-        self.uart.init(115200, bits=8, parity=None, stop=1, timeout=1, rxbuf = 200)
+        self.uart = UART(port.UART, 57600)
+        self.uart.init(57600, bits=8, parity=None, stop=1, timeout=2, rxbuf = 50)
         self.uart.write('N')
 
     def trigger(self):
@@ -19,3 +19,6 @@ class Base_station_serial():
             return self.uart.readline().decode("utf-8").strip('\n')
         else:
             return None
+    def send_waveform(self,parameter_str):
+        msg = 'W,' + parameter_str + '\n'
+        self.uart.write(msg)

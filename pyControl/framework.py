@@ -212,8 +212,6 @@ def receive_data():
     if new_byte == b'\x03': # Serial command to stop run.
         running = False
     elif new_byte == b'V': # Get/set variables command.
-        state_machine.print('bob')
-        state_machine.smd.hw.Cpoke.LED.toggle()
         data_len = int.from_bytes(usb_serial.read(2), 'little')
         data = usb_serial.read(data_len)
         checksum = int.from_bytes(usb_serial.read(2), 'little')
@@ -227,6 +225,16 @@ def receive_data():
             v_name = data[:-1].decode()
             v_str = state_machine._get_variable(v_name)
             data_output_queue.put((current_time, varbl_typ, (v_name, v_str)))
+    elif new_byte == b'W': # Waveform command
+        data_len = int.from_bytes(usb_serial.read(2), 'little')
+        data = usb_serial.read(data_len)
+        checksum = int.from_bytes(usb_serial.read(2), 'little')
+        if not checksum == (sum(data) & 0xFFFF):
+            return  # Bad checksum.
+        if data[-1:] == b's': # Set variable.
+            wave_parameters = data[:-1].decode()[1:-1] # remove ' at beginning and end
+            state_machine.smd.print(wave_parameters)
+            state_machine.smd.hw.BaseStation.send_waveform(wave_parameters)
 
 def _update():
     # Perform framework update functions in order of priority.

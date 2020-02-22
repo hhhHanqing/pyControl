@@ -37,9 +37,9 @@ class Markov_setter(QtGui.QWidget):
         self.continuous_tone_lbl.setAlignment(QtCore.Qt.AlignRight)
         self.other_layout.addWidget(self.continuous_tone_lbl,0,0)
         self.tone_checkbox = QtGui.QCheckBox()
-        self.tone_checkbox.setChecked(eval(init_vars['continuous_tone___']))
+        self.tone_checkbox.setChecked(eval(init_vars['continuous_tone']))
         self.other_layout.addWidget(self.tone_checkbox,0,1)
-        self.tone_duration.setEnabled(not eval(init_vars['continuous_tone___']))
+        self.tone_duration.setEnabled(not eval(init_vars['continuous_tone']))
         for i,var in enumerate([self.tone_duration,self.error_duration,self.tone_repeats,self.trial_new_block,self.speaker_volume]):
             var.setBoard(board)
             var.add_to_grid(self.other_layout,i+1)
@@ -84,11 +84,20 @@ class Markov_setter(QtGui.QWidget):
         self.single_shot = QtGui.QRadioButton('Single Shot')
         self.pulse_train = QtGui.QRadioButton('Pulse Train')
         self.start_delay = single_var(init_vars,'<b>Start Delay</b>',0,65.535,0.05,' s', 'start_delay')
+        self.on_time = single_var(init_vars,'<b>On Time</b>',0,65.535,0.05,' s', 'on_time')
+        self.off_time = single_var(init_vars,'<b>Off Time</b>',0,65.535,0.05,' s', 'off_time')
+        self.on_time.spn.setDecimals(3)
+        self.train_dur = single_var(init_vars,'<b>Train Duration</b>',0,9999.999,0.250,' s', 'train_dur')
+        self.ramp_dur = single_var(init_vars,'<b>Ramp Down</b>',.1,65.5,0.1,' s', 'ramp_dur')
         self.send_waveform_btn = QtGui.QPushButton('Send New Waveform Parameters')
         self.cerebro_layout.addWidget(self.single_shot,0,0)
         self.cerebro_layout.addWidget(self.pulse_train,0,1)
         self.start_delay.add_to_grid(self.cerebro_layout,1)
-        self.cerebro_layout.addWidget(self.send_waveform_btn,2,0,1,2)
+        self.on_time.add_to_grid(self.cerebro_layout,2)
+        self.off_time.add_to_grid(self.cerebro_layout,3)
+        self.train_dur.add_to_grid(self.cerebro_layout,4)
+        self.ramp_dur.add_to_grid(self.cerebro_layout,5)
+        self.cerebro_layout.addWidget(self.send_waveform_btn,6,0,1,2)
         self.cerebro_group.setLayout(self.cerebro_layout)
 
 
@@ -121,11 +130,11 @@ class Markov_setter(QtGui.QWidget):
     def update_tone(self):
         self.tone_duration.setEnabled(not self.tone_checkbox.isChecked())
         if self.board.framework_running:
-            self.board.set_variable('continuous_tone___',self.tone_checkbox.isChecked())
+            self.board.set_variable('continuous_tone',self.tone_checkbox.isChecked())
 
     def send_waveform_parameters(self):
         if self.board.framework_running: # Value returned later.
-            self.board.exec('fw.hw.Cpoke.LED.toggle()')
+            self.board.set_waveform(self.start_delay.spn.value(),self.on_time.spn.value(),self.off_time.spn.value(),self.train_dur.spn.value(),self.ramp_dur.spn.value())
         else:
             self.board.exec('smd.hw.Cpoke.LED.toggle()')
 class left_right_vars():
