@@ -19,6 +19,3 @@ class Base_station_serial():
             return self.uart.readline().decode("utf-8").strip('\n')
         else:
             return None
-    def send_waveform(self,parameter_str):
-        msg = 'W,' + parameter_str + '\n'
-        self.uart.write(msg)

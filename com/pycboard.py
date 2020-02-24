@@ -446,3 +446,8 @@ class Pycboard(Pyboard):
             checksum = sum(data).to_bytes(2, 'little')
             self.serial.write(b'W' + data_len + data + checksum)
             return None
+    
+    def get_cerebro_battery(self):
+        if self.framework_running:
+            self.serial.write(b'B')
+            return None

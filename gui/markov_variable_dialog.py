@@ -83,30 +83,37 @@ class Markov_setter(QtGui.QWidget):
         self.cerebro_layout = QtGui.QGridLayout()
         self.single_shot_radio = QtGui.QRadioButton('Single Shot')
         self.pulse_train_radio = QtGui.QRadioButton('Pulse Train')
+        self.cerebro_refresh_btn = QtGui.QPushButton('Refresh')
+        self.battery_indicator = QtGui.QProgressBar()
+        self.battery_indicator.setRange(0,100)
+        self.battery_indicator.setValue(78)
+        self.battery_indicator.setFormat("%p%")
         self.start_delay = wave_var(init_vars,'<b>Start Delay</b>',0,65.535,0.05,' s', 'start_delay')
         self.on_time = wave_var(init_vars,'<b>On Time</b>',0,65.535,0.05,' s', 'on_time')
         self.off_time = wave_var(init_vars,'<b>Off Time</b>',0,65.535,0.05,' s', 'off_time')
         self.train_dur = wave_var(init_vars,'<b>Train Duration</b>',0,9999.999,0.250,' s', 'train_dur')
         self.ramp_dur = wave_var(init_vars,'<b>Ramp Down</b>',0,65.5,0.1,' s', 'ramp_dur')
         self.send_waveform_btn = QtGui.QPushButton('Send New Waveform Parameters')
-        self.cerebro_layout.addWidget(self.single_shot_radio,0,0)
-        self.cerebro_layout.addWidget(self.pulse_train_radio,0,1)
-        self.start_delay.add_to_grid(self.cerebro_layout,1)
-        self.on_time.add_to_grid(self.cerebro_layout,2)
-        self.off_time.add_to_grid(self.cerebro_layout,3)
-        self.train_dur.add_to_grid(self.cerebro_layout,4)
-        self.ramp_dur.add_to_grid(self.cerebro_layout,5)
-        self.cerebro_layout.addWidget(self.send_waveform_btn,6,0,1,2)
+        self.cerebro_layout.addWidget(self.cerebro_refresh_btn,0,0,1,2)
+        self.cerebro_layout.addWidget(self.battery_indicator,1,0,1,2)
+        self.cerebro_layout.addWidget(self.single_shot_radio,2,0)
+        self.cerebro_layout.addWidget(self.pulse_train_radio,2,1)
+        self.start_delay.add_to_grid(self.cerebro_layout,3)
+        self.on_time.add_to_grid(self.cerebro_layout,4)
+        self.off_time.add_to_grid(self.cerebro_layout,5)
+        self.train_dur.add_to_grid(self.cerebro_layout,6)
+        self.ramp_dur.add_to_grid(self.cerebro_layout,7)
+        self.cerebro_layout.addWidget(self.send_waveform_btn,8,0,1,2)
         self.cerebro_group.setLayout(self.cerebro_layout)
 
         is_pulse_train = (eval(init_vars['pulse_train']))
         self.single_shot_radio.setChecked(not is_pulse_train)
         self.pulse_train_radio.setChecked(is_pulse_train)
         if is_pulse_train:
-            self.ramp_dur.setEnabled(False)
+            self.ramp_dur.setVisible(False)
         else:
-            self.off_time.setEnabled(False)
-            self.train_dur.setEnabled(False)
+            self.off_time.setVisible(False)
+            self.train_dur.setVisible(False)
 
         grid_layout.addWidget(self.left_right_box,0,0,1,4)
         grid_layout.addWidget(self.other_box,1,0,1,3)
@@ -118,6 +125,7 @@ class Markov_setter(QtGui.QWidget):
         self.laser_checkbox.clicked.connect(self.update_laser)
         self.with_tone.clicked.connect(self.update_laser)
         self.with_collection.clicked.connect(self.update_laser)
+        self.cerebro_refresh_btn.clicked.connect(self.update_battery)
         self.single_shot_radio.clicked.connect(self.update_cerebro_input)
         self.pulse_train_radio.clicked.connect(self.update_cerebro_input)
         self.send_waveform_btn.clicked.connect(self.send_waveform_parameters)
@@ -141,16 +149,19 @@ class Markov_setter(QtGui.QWidget):
         if self.board.framework_running:
             self.board.set_variable('continuous_tone',self.tone_checkbox.isChecked())
 
+    def update_battery(self):
+        if self.board.framework_running:
+            self.board.get_cerebro_battery()
 
     def update_cerebro_input(self):
         if self.pulse_train_radio.isChecked():
-            self.off_time.setEnabled(True)
-            self.train_dur.setEnabled(True)
-            self.ramp_dur.setEnabled(False)
+            self.off_time.setVisible(True)
+            self.train_dur.setVisible(True)
+            self.ramp_dur.setVisible(False)
         else:
-            self.off_time.setEnabled(False)
-            self.train_dur.setEnabled(False)
-            self.ramp_dur.setEnabled(True)
+            self.off_time.setVisible(False)
+            self.train_dur.setVisible(False)
+            self.ramp_dur.setVisible(True)
             # if self.board.framework_running: # Value returned later.
             #     self.board.set_variable('laser_with_tone',self.with_tone.isChecked())
             #     self.board.set_variable('laser_with_collection',self.with_collection.isChecked())
@@ -164,12 +175,20 @@ class Markov_setter(QtGui.QWidget):
             return str(1000*round(parameter.spn.value(),3))[:-2]
 
         if self.board.framework_running: # Value returned later.
-            self.board.set_waveform(mills_str(self.start_delay),
-                                    mills_str(self.on_time),
-                                    mills_str(self.off_time),
-                                    mills_str(self.train_dur),
-                                    mills_str(self.ramp_dur)
-                                    )
+            if self.pulse_train_radio.isChecked():
+                self.board.set_waveform(mills_str(self.start_delay),
+                                        mills_str(self.on_time),
+                                        mills_str(self.off_time),
+                                        mills_str(self.train_dur),
+                                        '0' 
+                                        )
+            else:
+                self.board.set_waveform(mills_str(self.start_delay),
+                                        mills_str(self.on_time),
+                                        '0',
+                                        '0',
+                                        mills_str(self.ramp_dur)
+                                        )
         # else:
         #     self.board.exec('smd.hw.Cpoke.LED.toggle()')
 
@@ -347,9 +366,9 @@ class wave_var():
         grid.addWidget(self.label,row,0)
         grid.addWidget(self.spn,row,1)
 
-    def setEnabled(self,doEnable):
-        self.label.setEnabled(doEnable)
-        self.spn.setEnabled(doEnable)
+    def setVisible(self,makeVisible):
+        self.label.setVisible(makeVisible)
+        self.spn.setVisible(makeVisible)
 
     def setBoard(self,board):
         self.board = board

@@ -233,8 +233,11 @@ def receive_data():
             return  # Bad checksum.
         if data[-1:] == b's': # Set variable.
             wave_parameters = data[:-1].decode()[1:-1] # remove ' at beginning and end
-            state_machine.smd.print(wave_parameters)
-            state_machine.smd.hw.BaseStation.send_waveform(wave_parameters)
+            msg = 'W,' + wave_parameters + '\n'
+            state_machine.smd.hw.BaseStation.uart.write(msg)
+    elif new_byte == b'B': # Request battery info from cerebro
+        msg = 'B\n'
+        state_machine.smd.hw.BaseStation.uart.write(msg)
 
 def _update():
     # Perform framework update functions in order of priority.
