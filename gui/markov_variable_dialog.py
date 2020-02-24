@@ -86,7 +86,6 @@ class Markov_setter(QtGui.QWidget):
         self.start_delay = single_var(init_vars,'<b>Start Delay</b>',0,65.535,0.05,' s', 'start_delay')
         self.on_time = single_var(init_vars,'<b>On Time</b>',0,65.535,0.05,' s', 'on_time')
         self.off_time = single_var(init_vars,'<b>Off Time</b>',0,65.535,0.05,' s', 'off_time')
-        self.on_time.spn.setDecimals(3)
         self.train_dur = single_var(init_vars,'<b>Train Duration</b>',0,9999.999,0.250,' s', 'train_dur')
         self.ramp_dur = single_var(init_vars,'<b>Ramp Down</b>',.1,65.5,0.1,' s', 'ramp_dur')
         self.send_waveform_btn = QtGui.QPushButton('Send New Waveform Parameters')
@@ -133,10 +132,19 @@ class Markov_setter(QtGui.QWidget):
             self.board.set_variable('continuous_tone',self.tone_checkbox.isChecked())
 
     def send_waveform_parameters(self):
+        def mills_str(parameter):
+            return str(1000*round(parameter.spn.value(),3))[:-2]
+
         if self.board.framework_running: # Value returned later.
-            self.board.set_waveform(self.start_delay.spn.value(),self.on_time.spn.value(),self.off_time.spn.value(),self.train_dur.spn.value(),self.ramp_dur.spn.value())
-        else:
-            self.board.exec('smd.hw.Cpoke.LED.toggle()')
+            self.board.set_waveform(mills_str(self.start_delay),
+                                    mills_str(self.on_time),
+                                    mills_str(self.off_time),
+                                    mills_str(self.train_dur),
+                                    mills_str(self.ramp_dur)
+                                    )
+        # else:
+        #     self.board.exec('smd.hw.Cpoke.LED.toggle()')
+
 class left_right_vars():
     def __init__(self,initial_vars_dict,label,min,max,step,suffix,varname=''):
         center = QtCore.Qt.AlignCenter
