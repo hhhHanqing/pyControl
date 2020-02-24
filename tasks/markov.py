@@ -63,11 +63,12 @@ v.laser_with_tone = False
 v.laser_with_collection = False
 
 #Cerebro variables
+v.pulse_train = False
 v.start_delay = 0
-v.on_time = 0
+v.on_time = 2
 v.off_time = 0
 v.train_dur = 0
-v.ramp_dur = 0
+v.ramp_dur = 0.3
 
 initial_state = 'waiting_for_initiation_center'
 

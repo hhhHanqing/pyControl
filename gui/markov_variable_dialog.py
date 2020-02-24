@@ -14,9 +14,9 @@ class Markov_setter(QtGui.QWidget):
         self.left_lbl.setAlignment(center)
         self.right_lbl = QtGui.QLabel('<b>Right</b>')
         self.right_lbl.setAlignment(center)
-        self.reward_probability = left_right_vars(init_vars,'<b>Reward Prob 🎲 </b>',0,1,.1,'','reward_probability')
-        self.req_presses = left_right_vars(init_vars,'<b>Presses 👇 </b>',1,100,1,'','required_presses')
-        self.reward_volume = left_right_vars(init_vars,'<b>Reward Vol 💧 </b>',1,500,25,' µL','reward_volume')
+        self.reward_probability = left_right_vars(init_vars,'🎲 <b>Reward Prob</b>',0,1,.1,'','reward_probability')
+        self.req_presses = left_right_vars(init_vars,'👇 <b>Presses</b>',1,100,1,'','required_presses')
+        self.reward_volume = left_right_vars(init_vars,'💧 <b>Reward Vol</b>',1,500,25,' µL','reward_volume')
 
         self.left_right_layout.addWidget(self.left_lbl,0,1)
         self.left_right_layout.addWidget(self.right_lbl,0,2)
@@ -28,8 +28,8 @@ class Markov_setter(QtGui.QWidget):
         
         self.other_box = QtGui.QGroupBox('Other Variables')
         self.other_layout = QtGui.QGridLayout()
-        self.speaker_volume = single_var(init_vars,'<b>Speaker Volume 🔈</b>',1,31,1,'','speaker_volume')
-        self.error_duration = single_var(init_vars,'<b>Error Duration</b>', .5,120,.5,' s','time_error_freeze_seconds')
+        self.speaker_volume = single_var(init_vars,'🔈 <b>Speaker Volume</b>',1,31,1,'','speaker_volume')
+        self.error_duration = single_var(init_vars,'❌ <b>Error Duration</b>', .5,120,.5,' s','time_error_freeze_seconds')
         self.tone_duration = single_var(init_vars,'<b>Tone Duration</b>', 1,10,.5,' s','time_tone_duration_seconds')
         self.tone_repeats = single_var(init_vars,'<b>Maximum Repeats</b>',0,20,1,'','max_tone_repeats')
         self.trial_new_block = single_var(init_vars,'<b>New Block on Trial...',0,5000,1,'','trial_new_block')
@@ -81,16 +81,16 @@ class Markov_setter(QtGui.QWidget):
 
         self.cerebro_group = QtGui.QGroupBox('Cerebro')
         self.cerebro_layout = QtGui.QGridLayout()
-        self.single_shot = QtGui.QRadioButton('Single Shot')
-        self.pulse_train = QtGui.QRadioButton('Pulse Train')
-        self.start_delay = single_var(init_vars,'<b>Start Delay</b>',0,65.535,0.05,' s', 'start_delay')
-        self.on_time = single_var(init_vars,'<b>On Time</b>',0,65.535,0.05,' s', 'on_time')
-        self.off_time = single_var(init_vars,'<b>Off Time</b>',0,65.535,0.05,' s', 'off_time')
-        self.train_dur = single_var(init_vars,'<b>Train Duration</b>',0,9999.999,0.250,' s', 'train_dur')
-        self.ramp_dur = single_var(init_vars,'<b>Ramp Down</b>',.1,65.5,0.1,' s', 'ramp_dur')
+        self.single_shot_radio = QtGui.QRadioButton('Single Shot')
+        self.pulse_train_radio = QtGui.QRadioButton('Pulse Train')
+        self.start_delay = wave_var(init_vars,'<b>Start Delay</b>',0,65.535,0.05,' s', 'start_delay')
+        self.on_time = wave_var(init_vars,'<b>On Time</b>',0,65.535,0.05,' s', 'on_time')
+        self.off_time = wave_var(init_vars,'<b>Off Time</b>',0,65.535,0.05,' s', 'off_time')
+        self.train_dur = wave_var(init_vars,'<b>Train Duration</b>',0,9999.999,0.250,' s', 'train_dur')
+        self.ramp_dur = wave_var(init_vars,'<b>Ramp Down</b>',0,65.5,0.1,' s', 'ramp_dur')
         self.send_waveform_btn = QtGui.QPushButton('Send New Waveform Parameters')
-        self.cerebro_layout.addWidget(self.single_shot,0,0)
-        self.cerebro_layout.addWidget(self.pulse_train,0,1)
+        self.cerebro_layout.addWidget(self.single_shot_radio,0,0)
+        self.cerebro_layout.addWidget(self.pulse_train_radio,0,1)
         self.start_delay.add_to_grid(self.cerebro_layout,1)
         self.on_time.add_to_grid(self.cerebro_layout,2)
         self.off_time.add_to_grid(self.cerebro_layout,3)
@@ -99,6 +99,14 @@ class Markov_setter(QtGui.QWidget):
         self.cerebro_layout.addWidget(self.send_waveform_btn,6,0,1,2)
         self.cerebro_group.setLayout(self.cerebro_layout)
 
+        is_pulse_train = (eval(init_vars['pulse_train']))
+        self.single_shot_radio.setChecked(not is_pulse_train)
+        self.pulse_train_radio.setChecked(is_pulse_train)
+        if is_pulse_train:
+            self.ramp_dur.setEnabled(False)
+        else:
+            self.off_time.setEnabled(False)
+            self.train_dur.setEnabled(False)
 
         grid_layout.addWidget(self.left_right_box,0,0,1,4)
         grid_layout.addWidget(self.other_box,1,0,1,3)
@@ -110,6 +118,8 @@ class Markov_setter(QtGui.QWidget):
         self.laser_checkbox.clicked.connect(self.update_laser)
         self.with_tone.clicked.connect(self.update_laser)
         self.with_collection.clicked.connect(self.update_laser)
+        self.single_shot_radio.clicked.connect(self.update_cerebro_input)
+        self.pulse_train_radio.clicked.connect(self.update_cerebro_input)
         self.send_waveform_btn.clicked.connect(self.send_waveform_parameters)
 
     def update_laser(self):
@@ -130,6 +140,24 @@ class Markov_setter(QtGui.QWidget):
         self.tone_duration.setEnabled(not self.tone_checkbox.isChecked())
         if self.board.framework_running:
             self.board.set_variable('continuous_tone',self.tone_checkbox.isChecked())
+
+
+    def update_cerebro_input(self):
+        if self.pulse_train_radio.isChecked():
+            self.off_time.setEnabled(True)
+            self.train_dur.setEnabled(True)
+            self.ramp_dur.setEnabled(False)
+        else:
+            self.off_time.setEnabled(False)
+            self.train_dur.setEnabled(False)
+            self.ramp_dur.setEnabled(True)
+            # if self.board.framework_running: # Value returned later.
+            #     self.board.set_variable('laser_with_tone',self.with_tone.isChecked())
+            #     self.board.set_variable('laser_with_collection',self.with_collection.isChecked())
+        # else:
+            # if self.board.framework_running:
+            #    self.board.set_variable('laser_with_tone',False)
+            #    self.board.set_variable('laser_with_collection',False) 
 
     def send_waveform_parameters(self):
         def mills_str(parameter):
@@ -268,6 +296,60 @@ class single_var():
         self.spn.setEnabled(doEnable)
         self.get_btn.setEnabled(doEnable)
         self.set_btn.setEnabled(doEnable)
+
+    def setBoard(self,board):
+        self.board = board
+
+    def get(self):
+        if self.board.framework_running: # Value returned later.
+            self.board.get_variable(self.varname)
+            QtCore.QTimer.singleShot(200, self.reload)
+        else: # Value returned immediately.
+            self.spn.setValue(self.board.get_variable(self.varname))
+
+    def set(self):
+        if self.board.framework_running: # Value returned later.
+            self.board.set_variable(self.varname,round(self.spn.value(),2))
+            QtCore.QTimer.singleShot(200, self.reload)
+        else: # Value returned immediately.
+            self.spn.setValue(self.board.get_variable(self.varname))
+    
+    def reload(self):
+        '''Reload value from sm_info.  sm_info is updated when variables are output
+        during framework run due to get/set.'''
+        self.spn.setValue(eval(str(self.board.sm_info['variables'][self.varname])))
+
+class wave_var():
+    def __init__(self,init_var_dict,label,min,max,step,suffix,varname=''):
+        center = QtCore.Qt.AlignCenter
+        Vcenter = QtCore.Qt.AlignVCenter
+        right = QtCore.Qt.AlignRight
+        button_width = 35
+        spin_width = 80
+        self.label = QtGui.QLabel(label)
+        self.label.setAlignment(right|Vcenter)
+        # self.label.setToolTip(helpText)
+        self.varname = varname
+
+        if isinstance(min,float) or isinstance(max,float) or isinstance(step,float):
+            self.spn = QtGui.QDoubleSpinBox()
+        else:
+            self.spn = QtGui.QSpinBox() 
+
+        self.spn.setRange(min,max)
+        self.spn.setValue(eval(init_var_dict[varname]))
+        self.spn.setSingleStep(step)
+        self.spn.setSuffix(suffix)
+        self.spn.setAlignment(center)
+        self.spn.setMaximumWidth(spin_width)
+
+    def add_to_grid(self,grid,row):
+        grid.addWidget(self.label,row,0)
+        grid.addWidget(self.spn,row,1)
+
+    def setEnabled(self,doEnable):
+        self.label.setEnabled(doEnable)
+        self.spn.setEnabled(doEnable)
 
     def setBoard(self,board):
         self.board = board
