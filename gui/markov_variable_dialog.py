@@ -7,9 +7,10 @@ class Markov_setter(QtGui.QWidget):
         self.board = board
 
         center = QtCore.Qt.AlignCenter
+        ###### Left and Right Group #######
+        # create widgets 
         self.left_right_box = QtGui.QGroupBox('Left and Right Variables')
         self.left_right_layout = QtGui.QGridLayout()
-
         self.left_lbl = QtGui.QLabel('<b>Left</b>')
         self.left_lbl.setAlignment(center)
         self.right_lbl = QtGui.QLabel('<b>Right</b>')
@@ -18,6 +19,7 @@ class Markov_setter(QtGui.QWidget):
         self.req_presses = left_right_vars(init_vars,'👇 <b>Presses</b>',1,100,1,'','required_presses')
         self.reward_volume = left_right_vars(init_vars,'💧 <b>Reward Vol</b>',1,500,25,' µL','reward_volume')
 
+        # place widgets in layout
         self.left_right_layout.addWidget(self.left_lbl,0,1)
         self.left_right_layout.addWidget(self.right_lbl,0,2)
         for i,var in enumerate([self.reward_probability, self.req_presses, self.reward_volume]):
@@ -26,6 +28,9 @@ class Markov_setter(QtGui.QWidget):
             var.add_to_grid(self.left_right_layout,row)
         self.left_right_box.setLayout(self.left_right_layout)
         
+
+        ###### Other Variables Group #######
+        # create widgets 
         self.other_box = QtGui.QGroupBox('Other Variables')
         self.other_layout = QtGui.QGridLayout()
         self.speaker_volume = single_var(init_vars,'🔈 <b>Speaker Volume</b>',1,31,1,'','speaker_volume')
@@ -38,6 +43,7 @@ class Markov_setter(QtGui.QWidget):
         self.other_layout.addWidget(self.continuous_tone_lbl,0,0)
         self.tone_checkbox = QtGui.QCheckBox()
         self.tone_checkbox.setChecked(eval(init_vars['continuous_tone']))
+        # place widgets
         self.other_layout.addWidget(self.tone_checkbox,0,1)
         self.tone_duration.setEnabled(not eval(init_vars['continuous_tone']))
         for i,var in enumerate([self.tone_duration,self.error_duration,self.tone_repeats,self.trial_new_block,self.speaker_volume]):
@@ -46,19 +52,19 @@ class Markov_setter(QtGui.QWidget):
         self.other_box.setLayout(self.other_layout)
         self.tone_checkbox.clicked.connect(self.update_tone)
 
+        ###### Laser Group #######
+        # create widgets 
         self.laser_group = QtGui.QGroupBox('Laser Variables')
         self.laser_layout = QtGui.QGridLayout()
         self.laser_enabled_lbl = QtGui.QLabel('<b>Laser Enabled</b>')
         self.laser_enabled_lbl.setAlignment(QtCore.Qt.AlignRight)
         self.laser_checkbox = QtGui.QCheckBox()
-
         withToneChecked,withCollectionChecked = eval(init_vars['laser_with_tone']), eval(init_vars['laser_with_collection'])
         if  withToneChecked or withCollectionChecked:
             laserIsChecked = True
         else:
             laserIsChecked = False
         self.laser_checkbox.setChecked(laserIsChecked)
-
         self.laser_onset_lbl = QtGui.QLabel('<b>Laser Onset</b>')
         self.laser_onset_lbl.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
         self.laser_onset_lbl.setEnabled(laserIsChecked)
@@ -71,6 +77,7 @@ class Markov_setter(QtGui.QWidget):
         self.laser_probability = single_var(init_vars,'<b>Laser Probability</b>',0,1,.05,'','laser_probability')
         self.laser_probability.setBoard(board)
         self.laser_probability.setEnabled(laserIsChecked)
+        # place widgets
         self.laser_layout.addWidget(self.laser_enabled_lbl,0,0)
         self.laser_layout.addWidget(self.laser_onset_lbl,1,0)
         self.laser_layout.addWidget(self.laser_checkbox,0,1)
@@ -79,9 +86,13 @@ class Markov_setter(QtGui.QWidget):
         self.laser_probability.add_to_grid(self.laser_layout,2)
         self.laser_group.setLayout(self.laser_layout)
 
+        ###### Cerebro Group #######
+        # create widgets 
         self.cerebro_group = QtGui.QGroupBox('Cerebro')
         self.cerebro_layout = QtGui.QGridLayout()
-        self.cerebro_channel = wave_var(init_vars,'<b>Cerebro Channel</b>',0,120,1,'', 'start_delay')
+        self.cerebro_channel = wave_var(init_vars,'<b>Cerebro Channel</b>',0,120,1,'')
+        self.diode_power_left = wave_var(init_vars,'<b>Left Power</b>',0,1023,1,'','diode_power_left')
+        self.diode_power_right = wave_var(init_vars,'<b>Right Power</b>',0,1023,1,'','diode_power_right')
         self.cerebro_connect_btn = QtGui.QPushButton('Connect To Cerebro')
         self.cerebro_refresh_btn = QtGui.QPushButton('Refresh')
         self.battery_indicator = QtGui.QProgressBar()
@@ -90,23 +101,26 @@ class Markov_setter(QtGui.QWidget):
         self.battery_indicator.setFormat("%p%")
         self.single_shot_radio = QtGui.QRadioButton('Single Shot')
         self.pulse_train_radio = QtGui.QRadioButton('Pulse Train')
-        self.start_delay = wave_var(init_vars,'<b>Start Delay</b>',0,65.535,0.05,' s', '')
+        self.start_delay = wave_var(init_vars,'<b>Start Delay</b>',0,65.535,0.05,' s', 'start_delay')
         self.on_time = wave_var(init_vars,'<b>On Time</b>',0,65.535,0.05,' s', 'on_time')
         self.off_time = wave_var(init_vars,'<b>Off Time</b>',0,65.535,0.05,' s', 'off_time')
         self.train_dur = wave_var(init_vars,'<b>Train Duration</b>',0,9999.999,0.250,' s', 'train_dur')
         self.ramp_dur = wave_var(init_vars,'<b>Ramp Down</b>',0,65.5,0.1,' s', 'ramp_dur')
         self.send_waveform_btn = QtGui.QPushButton('Send New Waveform Parameters')
+        # place widgets
         self.cerebro_channel.add_to_grid(self.cerebro_layout,0)
         self.cerebro_layout.addWidget(self.cerebro_connect_btn,0,2,1,2)
-        self.cerebro_layout.addWidget(self.cerebro_refresh_btn,1,3)
-        self.cerebro_layout.addWidget(self.battery_indicator,1,0,1,3)
-        self.cerebro_layout.addWidget(self.single_shot_radio,2,1)
-        self.cerebro_layout.addWidget(self.pulse_train_radio,2,2)
-        self.start_delay.add_to_grid(self.cerebro_layout,3,1)
-        self.on_time.add_to_grid(self.cerebro_layout,4)
-        self.off_time.add_to_grid(self.cerebro_layout,4,2)
-        self.train_dur.add_to_grid(self.cerebro_layout,5,2)
-        self.ramp_dur.add_to_grid(self.cerebro_layout,5)
+        self.diode_power_left.add_to_grid(self.cerebro_layout,1)
+        self.diode_power_right.add_to_grid(self.cerebro_layout,1,2)
+        self.cerebro_layout.addWidget(self.cerebro_refresh_btn,2,3)
+        self.cerebro_layout.addWidget(self.battery_indicator,2,0,1,3)
+        self.cerebro_layout.addWidget(self.single_shot_radio,3,1)
+        self.cerebro_layout.addWidget(self.pulse_train_radio,3,2)
+        self.start_delay.add_to_grid(self.cerebro_layout,4,1)
+        self.on_time.add_to_grid(self.cerebro_layout,5)
+        self.off_time.add_to_grid(self.cerebro_layout,5,2)
+        self.ramp_dur.add_to_grid(self.cerebro_layout,6,1)
+        self.train_dur.add_to_grid(self.cerebro_layout,7,1)
         self.cerebro_layout.addWidget(self.send_waveform_btn,8,1,1,2)
         self.cerebro_group.setLayout(self.cerebro_layout)
 
@@ -157,6 +171,10 @@ class Markov_setter(QtGui.QWidget):
     def connect_to_cerebro(self):
         if self.board.framework_running:
             self.board.initialize_cerebro_connection(self.cerebro_channel.spn.value())
+
+    def set_diode_powers(self):
+        if self.board.framework_running:
+            self.board.set_diode_powers(self.diode_power_left.spn.value(),self.diode_power_right.spn.value())
 
     def get_battery(self):
         if self.board.framework_running:

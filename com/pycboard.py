@@ -444,15 +444,23 @@ class Pycboard(Pyboard):
             data = repr(cerebro_radio_channel).encode() + b'n'
             data_len = len(data).to_bytes(2, 'little')
             checksum = sum(data).to_bytes(2, 'little')
-            self.serial.write(b'W' + data_len + data + checksum)
+            self.serial.write(b'C' + data_len + data + checksum)
+            return None
+
+    def set_diode_powers(self,left_pwr,right_pwr):
+        if self.framework_running: # Set variable with serial command.
+            data = repr('{},{}'.format(left_pwr,right_pwr)).encode() + b'd'
+            data_len = len(data).to_bytes(2, 'little')
+            checksum = sum(data).to_bytes(2, 'little')
+            self.serial.write(b'C' + data_len + data + checksum)
             return None
 
     def set_waveform(self,start_delay,on_time,off_time,train_dur,ramp_dur):
         if self.framework_running: # Set variable with serial command.
-            data = repr('{},{},{},{},{}'.format(start_delay,on_time,off_time,train_dur,ramp_dur)).encode() + b's'
+            data = repr('{},{},{},{},{}'.format(start_delay,on_time,off_time,train_dur,ramp_dur)).encode() + b'w'
             data_len = len(data).to_bytes(2, 'little')
             checksum = sum(data).to_bytes(2, 'little')
-            self.serial.write(b'W' + data_len + data + checksum)
+            self.serial.write(b'C' + data_len + data + checksum)
             return None
     
     def get_cerebro_battery(self):

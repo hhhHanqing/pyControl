@@ -106,6 +106,14 @@ class Variables_dialog(QtGui.QDialog):
                         print(data_chunks[2])
                         self.variables_grid.markov_gui.update_battery_status(int(data_chunks[2]))
                     elif msg_type == 'DP':
+                        left_pwr,right_pwr = data_chunks[2].split('-')
+                        if self.variables_grid.markov_gui.diode_power_left.spn.value() != int(left_pwr) or self.variables_grid.markov_gui.diode_power_right.spn.value() != int(right_pwr):
+                            print('different!!!!')
+                            self.variables_grid.markov_gui.set_diode_powers()
+                        else:
+                            print('same')
+                            # self.variables_grid.markov_gui.diode_power_left.spn.setValue(int(left_pwr))
+                            # self.variables_grid.markov_gui.diode_power_right.spn.setValue(int(right_pwr))
                         print(data_chunks[2].split('-'))
                     elif msg_type == 'Wave':
                         print(data_chunks[2].split('-'))

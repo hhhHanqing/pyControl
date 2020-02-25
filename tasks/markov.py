@@ -63,6 +63,8 @@ v.laser_with_tone = False
 v.laser_with_collection = False
 
 #Cerebro variables
+v.diode_power_left = 0
+v.diode_power_right = 0
 v.pulse_train = False
 v.start_delay = 0
 v.on_time = 2

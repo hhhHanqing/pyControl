@@ -225,21 +225,24 @@ def receive_data():
             v_name = data[:-1].decode()
             v_str = state_machine._get_variable(v_name)
             data_output_queue.put((current_time, varbl_typ, (v_name, v_str)))
-    elif new_byte == b'W': # Waveform command
+    elif new_byte == b'C': # Cerebro command
         data_len = int.from_bytes(usb_serial.read(2), 'little')
         data = usb_serial.read(data_len)
         checksum = int.from_bytes(usb_serial.read(2), 'little')
         if not checksum == (sum(data) & 0xFFFF):
             return  # Bad checksum.
-        if data[-1:] == b's': # Set variable.
+        if data[-1:] == b'd': # Set variable.
+            wave_parameters = data[:-1].decode()[1:-1] # remove ' at beginning and end
+            msg = 'D,' + wave_parameters + '\n'
+            state_machine.smd.hw.BaseStation.uart.write(msg)
+        elif data[-1:] == b'w': # Set variable.
             wave_parameters = data[:-1].decode()[1:-1] # remove ' at beginning and end
             msg = 'W,' + wave_parameters + '\n'
             state_machine.smd.hw.BaseStation.uart.write(msg)
-        if data[-1:] == b'n': # Set variable.
+        elif data[-1:] == b'n': # Set variable.
             wave_parameters = data[:-1].decode() # remove ' at beginning and end
             msg = 'K,' + wave_parameters + '\n'
             state_machine.smd.hw.BaseStation.uart.write(msg)
-
     elif new_byte == b'B': # Request battery info from cerebro
         msg = 'B\n'
         state_machine.smd.hw.BaseStation.uart.write(msg)
