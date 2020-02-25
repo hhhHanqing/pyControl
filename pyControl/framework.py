@@ -235,6 +235,11 @@ def receive_data():
             wave_parameters = data[:-1].decode()[1:-1] # remove ' at beginning and end
             msg = 'W,' + wave_parameters + '\n'
             state_machine.smd.hw.BaseStation.uart.write(msg)
+        if data[-1:] == b'n': # Set variable.
+            wave_parameters = data[:-1].decode() # remove ' at beginning and end
+            msg = 'K,' + wave_parameters + '\n'
+            state_machine.smd.hw.BaseStation.uart.write(msg)
+
     elif new_byte == b'B': # Request battery info from cerebro
         msg = 'B\n'
         state_machine.smd.hw.BaseStation.uart.write(msg)

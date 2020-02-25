@@ -81,29 +81,33 @@ class Markov_setter(QtGui.QWidget):
 
         self.cerebro_group = QtGui.QGroupBox('Cerebro')
         self.cerebro_layout = QtGui.QGridLayout()
-        self.single_shot_radio = QtGui.QRadioButton('Single Shot')
-        self.pulse_train_radio = QtGui.QRadioButton('Pulse Train')
+        self.cerebro_channel = wave_var(init_vars,'<b>Cerebro Channel</b>',0,120,1,'', 'start_delay')
+        self.cerebro_connect_btn = QtGui.QPushButton('Connect To Cerebro')
         self.cerebro_refresh_btn = QtGui.QPushButton('Refresh')
         self.battery_indicator = QtGui.QProgressBar()
         self.battery_indicator.setRange(0,100)
         self.battery_indicator.setValue(0)
         self.battery_indicator.setFormat("%p%")
-        self.start_delay = wave_var(init_vars,'<b>Start Delay</b>',0,65.535,0.05,' s', 'start_delay')
+        self.single_shot_radio = QtGui.QRadioButton('Single Shot')
+        self.pulse_train_radio = QtGui.QRadioButton('Pulse Train')
+        self.start_delay = wave_var(init_vars,'<b>Start Delay</b>',0,65.535,0.05,' s', '')
         self.on_time = wave_var(init_vars,'<b>On Time</b>',0,65.535,0.05,' s', 'on_time')
         self.off_time = wave_var(init_vars,'<b>Off Time</b>',0,65.535,0.05,' s', 'off_time')
         self.train_dur = wave_var(init_vars,'<b>Train Duration</b>',0,9999.999,0.250,' s', 'train_dur')
         self.ramp_dur = wave_var(init_vars,'<b>Ramp Down</b>',0,65.5,0.1,' s', 'ramp_dur')
         self.send_waveform_btn = QtGui.QPushButton('Send New Waveform Parameters')
-        self.cerebro_layout.addWidget(self.cerebro_refresh_btn,0,0,1,2)
-        self.cerebro_layout.addWidget(self.battery_indicator,1,0,1,2)
-        self.cerebro_layout.addWidget(self.single_shot_radio,2,0)
-        self.cerebro_layout.addWidget(self.pulse_train_radio,2,1)
-        self.start_delay.add_to_grid(self.cerebro_layout,3)
+        self.cerebro_channel.add_to_grid(self.cerebro_layout,0)
+        self.cerebro_layout.addWidget(self.cerebro_connect_btn,0,2,1,2)
+        self.cerebro_layout.addWidget(self.cerebro_refresh_btn,1,3)
+        self.cerebro_layout.addWidget(self.battery_indicator,1,0,1,3)
+        self.cerebro_layout.addWidget(self.single_shot_radio,2,1)
+        self.cerebro_layout.addWidget(self.pulse_train_radio,2,2)
+        self.start_delay.add_to_grid(self.cerebro_layout,3,1)
         self.on_time.add_to_grid(self.cerebro_layout,4)
-        self.off_time.add_to_grid(self.cerebro_layout,5)
-        self.train_dur.add_to_grid(self.cerebro_layout,6)
-        self.ramp_dur.add_to_grid(self.cerebro_layout,7)
-        self.cerebro_layout.addWidget(self.send_waveform_btn,8,0,1,2)
+        self.off_time.add_to_grid(self.cerebro_layout,4,2)
+        self.train_dur.add_to_grid(self.cerebro_layout,5,2)
+        self.ramp_dur.add_to_grid(self.cerebro_layout,5)
+        self.cerebro_layout.addWidget(self.send_waveform_btn,8,1,1,2)
         self.cerebro_group.setLayout(self.cerebro_layout)
 
         is_pulse_train = (eval(init_vars['pulse_train']))
@@ -125,6 +129,7 @@ class Markov_setter(QtGui.QWidget):
         self.laser_checkbox.clicked.connect(self.update_laser)
         self.with_tone.clicked.connect(self.update_laser)
         self.with_collection.clicked.connect(self.update_laser)
+        self.cerebro_connect_btn.clicked.connect(self.connect_to_cerebro)
         self.cerebro_refresh_btn.clicked.connect(self.get_battery)
         self.single_shot_radio.clicked.connect(self.update_cerebro_input)
         self.pulse_train_radio.clicked.connect(self.update_cerebro_input)
@@ -149,10 +154,13 @@ class Markov_setter(QtGui.QWidget):
         if self.board.framework_running:
             self.board.set_variable('continuous_tone',self.tone_checkbox.isChecked())
 
+    def connect_to_cerebro(self):
+        if self.board.framework_running:
+            self.board.initialize_cerebro_connection(self.cerebro_channel.spn.value())
+
     def get_battery(self):
         if self.board.framework_running:
             self.board.get_cerebro_battery()
-
     def update_cerebro_input(self):
         if self.pulse_train_radio.isChecked():
             self.off_time.setVisible(True)
@@ -359,15 +367,16 @@ class wave_var():
             self.spn = QtGui.QSpinBox() 
 
         self.spn.setRange(min,max)
-        self.spn.setValue(eval(init_var_dict[varname]))
+        if varname != '':
+            self.spn.setValue(eval(init_var_dict[varname]))
         self.spn.setSingleStep(step)
         self.spn.setSuffix(suffix)
         self.spn.setAlignment(center)
         self.spn.setMaximumWidth(spin_width)
 
-    def add_to_grid(self,grid,row):
-        grid.addWidget(self.label,row,0)
-        grid.addWidget(self.spn,row,1)
+    def add_to_grid(self,grid,row,col_offset=0):
+        grid.addWidget(self.label,row,0+col_offset)
+        grid.addWidget(self.spn,row,1+col_offset)
 
     def setVisible(self,makeVisible):
         self.label.setVisible(makeVisible)
