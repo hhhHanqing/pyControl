@@ -297,6 +297,7 @@ class Run_task_tab(QtGui.QWidget):
                 self.variables_button.clicked.disconnect()
                 self.variables_dialog.deleteLater()
             self.variables_dialog = Variables_dialog(self, self.board)
+            self.data_logger.data_consumers.append(self.variables_dialog)
             self.variables_button.clicked.connect(self.variables_dialog.exec_)
             self.variables_button.setEnabled(True)
             self.task_plot.set_state_machine(self.board.sm_info)

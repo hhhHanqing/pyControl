@@ -5,7 +5,7 @@ class Base_station_serial():
     def __init__(self, port):
         assert port.UART is not None, '! Base Station needs port with UART.'
         self.uart = UART(port.UART, 57600)
-        self.uart.init(57600, bits=8, parity=None, stop=1, timeout=2, rxbuf = 50)
+        self.uart.init(57600, bits=8, parity=None, stop=1, timeout=2, rxbuf = 150)
         self.uart.write('N')
 
     def trigger(self):

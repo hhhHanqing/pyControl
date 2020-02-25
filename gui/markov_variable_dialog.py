@@ -2,7 +2,7 @@ from pyqtgraph.Qt import QtGui, QtCore, QtWidgets
 
 class Markov_setter(QtGui.QWidget):
    # For setting and getting a single variable.
-    def __init__(self, grid_layout, parent, board,init_vars): # Should split into seperate init and provide info.
+    def __init__(self, parent, grid_layout, board,init_vars): # Should split into seperate init and provide info.
         super(QtGui.QWidget, self).__init__(parent) 
         self.board = board
 
@@ -86,7 +86,7 @@ class Markov_setter(QtGui.QWidget):
         self.cerebro_refresh_btn = QtGui.QPushButton('Refresh')
         self.battery_indicator = QtGui.QProgressBar()
         self.battery_indicator.setRange(0,100)
-        self.battery_indicator.setValue(78)
+        self.battery_indicator.setValue(0)
         self.battery_indicator.setFormat("%p%")
         self.start_delay = wave_var(init_vars,'<b>Start Delay</b>',0,65.535,0.05,' s', 'start_delay')
         self.on_time = wave_var(init_vars,'<b>On Time</b>',0,65.535,0.05,' s', 'on_time')
@@ -125,7 +125,7 @@ class Markov_setter(QtGui.QWidget):
         self.laser_checkbox.clicked.connect(self.update_laser)
         self.with_tone.clicked.connect(self.update_laser)
         self.with_collection.clicked.connect(self.update_laser)
-        self.cerebro_refresh_btn.clicked.connect(self.update_battery)
+        self.cerebro_refresh_btn.clicked.connect(self.get_battery)
         self.single_shot_radio.clicked.connect(self.update_cerebro_input)
         self.pulse_train_radio.clicked.connect(self.update_cerebro_input)
         self.send_waveform_btn.clicked.connect(self.send_waveform_parameters)
@@ -149,7 +149,7 @@ class Markov_setter(QtGui.QWidget):
         if self.board.framework_running:
             self.board.set_variable('continuous_tone',self.tone_checkbox.isChecked())
 
-    def update_battery(self):
+    def get_battery(self):
         if self.board.framework_running:
             self.board.get_cerebro_battery()
 
@@ -191,6 +191,9 @@ class Markov_setter(QtGui.QWidget):
                                         )
         # else:
         #     self.board.exec('smd.hw.Cpoke.LED.toggle()')
+
+    def update_battery_status(self,battery_percentage):
+        self.battery_indicator.setValue(battery_percentage)
 
 class left_right_vars():
     def __init__(self,initial_vars_dict,label,min,max,step,suffix,varname=''):

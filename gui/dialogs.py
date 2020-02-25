@@ -96,6 +96,23 @@ class Variables_dialog(QtGui.QDialog):
             self.layout.addWidget(self.scroll_area) 
         self.setLayout(self.layout)
 
+    def process_data(self, new_data):
+        for data_array in new_data:
+            if data_array[0]=='P': # printed miessage
+                data_chunks = data_array[2].split(',')
+                try:
+                    msg_type = data_chunks[1]
+                    if msg_type == 'Btry':
+                        print(data_chunks[2])
+                        self.variables_grid.markov_gui.update_battery_status(int(data_chunks[2]))
+                    elif msg_type == 'DP':
+                        print(data_chunks[2].split('-'))
+                    elif msg_type == 'Wave':
+                        print(data_chunks[2].split('-'))
+                except:
+                    print("badd chunk {}".format(data_chunks))
+
+
 class Variables_grid(QtGui.QWidget):
     # Grid of variables to set/get, displayed within scroll area of dialog.
     def __init__(self, parent, board):
@@ -104,7 +121,7 @@ class Variables_grid(QtGui.QWidget):
         self.grid_layout = QtGui.QGridLayout()
         if  board.sm_info['name'] == 'markov':
             initial_variables_dict = {v_name:v_value_str for (v_name, v_value_str) in sorted(variables.items())}
-            Markov_setter(self.grid_layout, self, board,initial_variables_dict)
+            self.markov_gui = Markov_setter(self,self.grid_layout, board,initial_variables_dict)
         else:
             for i, (v_name, v_value_str) in enumerate(sorted(variables.items())):
                 if '___' not in (v_name):
