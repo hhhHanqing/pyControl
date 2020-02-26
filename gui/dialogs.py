@@ -109,16 +109,15 @@ class Variables_dialog(QtGui.QDialog):
                         left_pwr,right_pwr = data_chunks[2].split('-')
                         if self.variables_grid.markov_gui.diode_power_left.spn.value() != int(left_pwr) or self.variables_grid.markov_gui.diode_power_right.spn.value() != int(right_pwr):
                             print('different!!!!')
-                            self.variables_grid.markov_gui.set_diode_powers()
+                            QtCore.QTimer.singleShot(500, self.variables_grid.markov_gui.set_diode_powers)
+                            
                         else:
                             print('same')
-                            # self.variables_grid.markov_gui.diode_power_left.spn.setValue(int(left_pwr))
-                            # self.variables_grid.markov_gui.diode_power_right.spn.setValue(int(right_pwr))
                         print(data_chunks[2].split('-'))
                     elif msg_type == 'Wave':
                         print(data_chunks[2].split('-'))
                 except:
-                    print("badd chunk {}".format(data_chunks))
+                    print("bad chunk {}".format(data_chunks))
 
 
 class Variables_grid(QtGui.QWidget):
