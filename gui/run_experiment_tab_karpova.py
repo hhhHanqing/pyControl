@@ -201,7 +201,6 @@ class Run_experiment_tab(QtGui.QWidget):
         self.startstopclose_all_button.setEnabled(True)
         self.setups_finished = 0
         self.setups_running  = 0
-        self.show_hide_logs()
 
     def startstopclose_all(self):
         if self.setups_running == 0:
@@ -346,19 +345,18 @@ class Subjectbox(QtGui.QGroupBox):
         self.time_text.setReadOnly(True)
         self.time_text.setFixedWidth(60)
         self.log_textbox = QtGui.QTextEdit()
-        self.log_textbox.setMinimumHeight(180)
+        self.log_textbox.setMinimumWidth(415)
         self.log_textbox.setFont(QtGui.QFont('Courier', 9))
         self.log_textbox.setReadOnly(True)
 
-        self.Vlayout = QtGui.QVBoxLayout(self)
-        self.Hlayout = QtGui.QHBoxLayout()
-        self.Hlayout.addWidget(self.boxTitle)
-        self.Hlayout.addWidget(self.start_stop_button)
-        self.Hlayout.addWidget(self.time_label)
-        self.Hlayout.addWidget(self.time_text)
-        self.Hlayout.addStretch(1)
-        self.Vlayout.addLayout(self.Hlayout)
-        self.Vlayout.addWidget(self.log_textbox)
+        self.subjectGridLayout = QtGui.QGridLayout(self)
+        self.Hlayout = QtGui.QGridLayout()
+        self.Hlayout.addWidget(self.boxTitle,0,0)
+        self.Hlayout.addWidget(self.time_label,0,1,QtCore.Qt.AlignRight)
+        self.Hlayout.addWidget(self.time_text,0,2,QtCore.Qt.AlignLeft)
+        self.Hlayout.addWidget(self.start_stop_button,0,3)
+        self.subjectGridLayout.addLayout(self.Hlayout,0,0,1,2)
+        self.subjectGridLayout.addWidget(self.log_textbox,1,0)
         
     def print_to_log(self, print_string, end='\n'):
         self.log_textbox.moveCursor(QtGui.QTextCursor.End)
@@ -369,9 +367,10 @@ class Subjectbox(QtGui.QGroupBox):
     def assign_board(self, board):
         self.board = board
         self.variables_dialog = Variables_dialog(self, board)
+        self.board.data_logger.data_consumers.append(self.variables_dialog)
         self.variables_box= QtGui.QGroupBox('Variables')
         self.variables_box.setLayout(self.variables_dialog.layout)
-        self.Vlayout.addWidget(self.variables_box)
+        self.subjectGridLayout.addWidget(self.variables_box,1,1)
         self.start_stop_button.clicked.connect(self.start_stop_rig)
 
     def start_stop_rig(self):
@@ -399,6 +398,7 @@ class Subjectbox(QtGui.QGroupBox):
 
         self.run_exp_tab.GUI_main.refresh_timer.stop()
         self.run_exp_tab.update_timer.start(update_interval)
+        self.boxTitle.setStyleSheet("font:15pt;color:green;")
 
     def task_stopped(self):
         '''Called when task stops running.'''
@@ -410,6 +410,7 @@ class Subjectbox(QtGui.QGroupBox):
         self.start_stop_button.setVisible(False)
         for widget in (self.boxTitle, self.time_label, self.time_text, self.variables_box):
             widget.setEnabled(False)
+        self.boxTitle.setStyleSheet("font:15pt;color:grey;")
 
     def process_data(self, new_data):
         pass
