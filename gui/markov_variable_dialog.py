@@ -176,6 +176,11 @@ class Markov_setter(QtGui.QWidget):
         if self.board.framework_running:
             self.board.set_diode_powers(self.diode_power_left.spn.value(),self.diode_power_right.spn.value())
 
+    def update_task_diode_powers(self):
+        if self.board.framework_running:
+            self.board.set_variable('diode_power_left',self.diode_power_left.spn.value())
+            self.board.set_variable('diode_power_right',self.diode_power_right.spn.value())
+
     def get_battery(self):
         if self.board.framework_running:
             self.board.get_cerebro_battery()
@@ -188,35 +193,30 @@ class Markov_setter(QtGui.QWidget):
             self.off_time.setVisible(False)
             self.train_dur.setVisible(False)
             self.ramp_dur.setVisible(True)
-            # if self.board.framework_running: # Value returned later.
-            #     self.board.set_variable('laser_with_tone',self.with_tone.isChecked())
-            #     self.board.set_variable('laser_with_collection',self.with_collection.isChecked())
-        # else:
-            # if self.board.framework_running:
-            #    self.board.set_variable('laser_with_tone',False)
-            #    self.board.set_variable('laser_with_collection',False) 
 
     def send_waveform_parameters(self):
-        def mills_str(parameter):
-            return str(1000*round(parameter.spn.value(),3))[:-2]
-
         if self.board.framework_running: # Value returned later.
             if self.pulse_train_radio.isChecked():
-                self.board.set_waveform(mills_str(self.start_delay),
-                                        mills_str(self.on_time),
-                                        mills_str(self.off_time),
-                                        mills_str(self.train_dur),
+                self.board.set_waveform(self.start_delay.mills_str(),
+                                        self.on_time.mills_str(),
+                                        self.off_time.mills_str(),
+                                        self.train_dur.mills_str(),
                                         '0' 
                                         )
             else:
-                self.board.set_waveform(mills_str(self.start_delay),
-                                        mills_str(self.on_time),
+                self.board.set_waveform(self.start_delay.mills_str(),
+                                        self.on_time.mills_str(),
                                         '0',
                                         '0',
-                                        mills_str(self.ramp_dur)
+                                        self.ramp_dur.mills_str()
                                         )
-        # else:
-        #     self.board.exec('smd.hw.Cpoke.LED.toggle()')
+
+            self.board.set_variable('pulse_train',self.pulse_train_radio.isChecked())
+            self.board.set_variable('start_delay',self.start_delay.spn.value())
+            self.board.set_variable('on_time',self.on_time.spn.value())
+            self.board.set_variable('off_time',self.off_time.spn.value())
+            self.board.set_variable('train_dur',self.train_dur.spn.value())
+            self.board.set_variable('ramp_dur',self.ramp_dur.spn.value())
 
     def update_battery_status(self,battery_percentage):
         self.battery_indicator.setValue(battery_percentage)
@@ -391,6 +391,9 @@ class wave_var():
         self.spn.setSuffix(suffix)
         self.spn.setAlignment(center)
         self.spn.setMaximumWidth(spin_width)
+
+    def mills_str(self):
+            return str(1000*round(self.spn.value(),3))[:-2]
 
     def add_to_grid(self,grid,row,col_offset=0):
         grid.addWidget(self.label,row,0+col_offset)

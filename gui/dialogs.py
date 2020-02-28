@@ -95,29 +95,36 @@ class Variables_dialog(QtGui.QDialog):
             self.scroll_area.setWidget(self.variables_grid)
             self.layout.addWidget(self.scroll_area) 
         self.setLayout(self.layout)
+        self.diode_was_different=False
 
     def process_data(self, new_data):
         for data_array in new_data:
             if data_array[0]=='P': # printed miessage
                 data_chunks = data_array[2].split(',')
-                try:
-                    msg_type = data_chunks[1]
-                    if msg_type == 'Btry':
-                        print(data_chunks[2])
-                        self.variables_grid.markov_gui.update_battery_status(int(data_chunks[2]))
-                    elif msg_type == 'DP':
-                        left_pwr,right_pwr = data_chunks[2].split('-')
-                        if self.variables_grid.markov_gui.diode_power_left.spn.value() != int(left_pwr) or self.variables_grid.markov_gui.diode_power_right.spn.value() != int(right_pwr):
-                            print('different!!!!')
-                            QtCore.QTimer.singleShot(500, self.variables_grid.markov_gui.set_diode_powers)
-                            
-                        else:
-                            print('same')
-                        print(data_chunks[2].split('-'))
-                    elif msg_type == 'Wave':
-                        print(data_chunks[2].split('-'))
-                except:
-                    print("bad chunk {}".format(data_chunks))
+                if data_chunks[0][0]=='[' and data_chunks[0][-1]==']': # is an incoming message from cerebro
+                    try:
+                        msg_type = data_chunks[1]
+                        if msg_type == 'Btry':
+                            self.variables_grid.markov_gui.update_battery_status(int(data_chunks[2]))
+                        elif msg_type == 'DP':
+                            left_pwr,right_pwr = data_chunks[2].split('-')
+                            if self.variables_grid.markov_gui.diode_power_left.spn.value() != int(left_pwr) or self.variables_grid.markov_gui.diode_power_right.spn.value() != int(right_pwr):
+                                self.diode_was_different = True
+                                QtCore.QTimer.singleShot(500, self.variables_grid.markov_gui.set_diode_powers)
+                            else:
+                                if self.diode_was_different:
+                                    QtCore.QTimer.singleShot(500, self.variables_grid.markov_gui.update_task_diode_powers)
+                                    self.diode_was_different = False
+                        elif msg_type == 'Wave':
+                            start_delay,on_time,off_time,train_dur,ramp_dur = data_chunks[2].split('-')
+                            if self.variables_grid.markov_gui.pulse_train_radio.isChecked():
+                                if self.variables_grid.markov_gui.start_delay.mills_str() != start_delay or self.variables_grid.markov_gui.on_time.mills_str() != on_time or  self.variables_grid.markov_gui.off_time.mills_str() != off_time or  self.variables_grid.markov_gui.train_dur.mills_str() != train_dur or ramp_dur != '0': 
+                                    QtCore.QTimer.singleShot(2500, self.variables_grid.markov_gui.send_waveform_parameters)
+                            else:
+                                if self.variables_grid.markov_gui.start_delay.mills_str() != start_delay or self.variables_grid.markov_gui.on_time.mills_str() != on_time or off_time != '0' or train_dur != '0' or self.variables_grid.markov_gui.ramp_dur.mills_str() != ramp_dur: 
+                                    QtCore.QTimer.singleShot(2500, self.variables_grid.markov_gui.send_waveform_parameters)
+                    except:
+                        print("bad chunk {}".format(data_chunks))
 
 
 class Variables_grid(QtGui.QWidget):
