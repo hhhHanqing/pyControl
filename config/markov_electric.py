@@ -3,7 +3,7 @@ import pyControl.hardware as _h
 
 #2019080800 ## yearmonthdayrevision yyyymmddrr  
 
-board = Breakout_dseries_1_5()
+board = Breakout_dseries_1_6()
 
 # button      = _h.Digital_input(board.button,rising_event='button_release',falling_event='button',pull='up')
 

@@ -9,5 +9,3 @@ class Lever_electric():
         self.motor.off()
     def extend(self):
         self.motor.on()
-    def value(self):
-        return self.input.value()
