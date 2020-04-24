@@ -467,3 +467,13 @@ class Pycboard(Pyboard):
         if self.framework_running:
             self.serial.write(b'B')
             return None
+
+    def test_base_trigger(self):
+        if self.framework_running:
+            self.serial.write(b'T')
+            return None
+
+    def test_base_stop(self):
+        if self.framework_running:
+            self.serial.write(b'S')
+            return None

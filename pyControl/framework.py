@@ -246,6 +246,10 @@ def receive_data():
     elif new_byte == b'B': # Request battery info from cerebro
         msg = 'B\n'
         state_machine.smd.hw.BaseStation.uart.write(msg)
+    elif new_byte == b'T': # Invoke base station device's trigger
+        state_machine.smd.hw.BaseStation.trigger()
+    elif new_byte == b'S': # Invoke base station device's stop
+        state_machine.smd.hw.BaseStation.stop()
 
 def _update():
     # Perform framework update functions in order of priority.

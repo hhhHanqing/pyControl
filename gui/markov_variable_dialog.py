@@ -107,6 +107,7 @@ class Markov_setter(QtGui.QWidget):
         self.train_dur = wave_var(init_vars,'<b>Train Duration</b>',0,9999.999,0.250,' s', 'train_dur')
         self.ramp_dur = wave_var(init_vars,'<b>Ramp Down</b>',0,65.5,0.1,' s', 'ramp_dur')
         self.send_waveform_btn = QtGui.QPushButton('Send New Waveform Parameters')
+        self.test_btn = QtGui.QPushButton('Click=Trigger       Shift+Click=Stop')
         # place widgets
         self.cerebro_channel.add_to_grid(self.cerebro_layout,0)
         self.cerebro_layout.addWidget(self.cerebro_connect_btn,0,2,1,2)
@@ -122,6 +123,7 @@ class Markov_setter(QtGui.QWidget):
         self.ramp_dur.add_to_grid(self.cerebro_layout,6,1)
         self.train_dur.add_to_grid(self.cerebro_layout,7,1)
         self.cerebro_layout.addWidget(self.send_waveform_btn,8,1,1,2)
+        self.cerebro_layout.addWidget(self.test_btn,9,0,1,4)
         self.cerebro_group.setLayout(self.cerebro_layout)
 
         is_pulse_train = (eval(init_vars['pulse_train']))
@@ -148,6 +150,7 @@ class Markov_setter(QtGui.QWidget):
         self.single_shot_radio.clicked.connect(self.update_cerebro_input)
         self.pulse_train_radio.clicked.connect(self.update_cerebro_input)
         self.send_waveform_btn.clicked.connect(self.send_waveform_parameters)
+        self.test_btn.clicked.connect(self.test_trigger_stop)
 
     def update_laser(self):
         self.with_collection.setEnabled(self.laser_checkbox.isChecked())
@@ -184,6 +187,15 @@ class Markov_setter(QtGui.QWidget):
     def get_battery(self):
         if self.board.framework_running:
             self.board.get_cerebro_battery()
+
+    def test_trigger_stop(self):
+        if self.board.framework_running:
+            modifiers = QtWidgets.QApplication.keyboardModifiers()
+            if modifiers == QtCore.Qt.ShiftModifier:
+                self.board.test_base_stop()
+            else:
+                self.board.test_base_trigger()
+
     def update_cerebro_input(self):
         if self.pulse_train_radio.isChecked():
             self.off_time.setVisible(True)
