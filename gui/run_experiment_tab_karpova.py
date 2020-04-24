@@ -12,7 +12,7 @@ from config.paths import dirs
 from com.pycboard import Pycboard, PyboardError
 from com.data_logger import Data_logger
 from gui.plotting import Experiment_plot
-from gui.dialogs import Variables_dialog, Summary_variables_dialog
+from gui.dialogs import Variables_dialog, Markov_Variables_dialog, Summary_variables_dialog
 from gui.utility import variable_constants
 
 class Run_experiment_tab(QtGui.QWidget):
@@ -366,7 +366,10 @@ class Subjectbox(QtGui.QGroupBox):
 
     def assign_board(self, board):
         self.board = board
-        self.variables_dialog = Variables_dialog(self, board)
+        if self.board.sm_info['name'] == 'markov':
+            self.variables_dialog = Markov_Variables_dialog(self, self.board)
+        else:
+            self.variables_dialog = Variables_dialog(self, self.board)
         self.board.data_logger.data_consumers.append(self.variables_dialog)
         self.variables_box= QtGui.QGroupBox('Variables')
         self.variables_box.setLayout(self.variables_dialog.layout)

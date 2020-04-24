@@ -1,6 +1,6 @@
 from pyqtgraph.Qt import QtGui, QtCore, QtWidgets
 
-class Markov_setter(QtGui.QWidget):
+class Markov_GUI(QtGui.QWidget):
    # For setting and getting a single variable.
     def __init__(self, parent, grid_layout, board,init_vars): # Should split into seperate init and provide info.
         super(QtGui.QWidget, self).__init__(parent) 

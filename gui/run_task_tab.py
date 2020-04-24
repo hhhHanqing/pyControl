@@ -10,7 +10,7 @@ from com.data_logger import Data_logger
 from config.paths import dirs
 from config.gui_settings import update_interval
 
-from gui.dialogs import Variables_dialog
+from gui.dialogs import *
 from gui.plotting import Task_plot
 from gui.utility import init_keyboard_shortcuts
 
@@ -296,7 +296,10 @@ class Run_task_tab(QtGui.QWidget):
             if self.variables_dialog:
                 self.variables_button.clicked.disconnect()
                 self.variables_dialog.deleteLater()
-            self.variables_dialog = Variables_dialog(self, self.board)
+            if self.board.sm_info['name'] == 'markov':
+                self.variables_dialog = Markov_Variables_dialog(self, self.board)
+            else:
+                self.variables_dialog = Variables_dialog(self, self.board)
             self.data_logger.data_consumers.append(self.variables_dialog)
             self.variables_button.clicked.connect(self.variables_dialog.exec_)
             self.variables_button.setEnabled(True)
