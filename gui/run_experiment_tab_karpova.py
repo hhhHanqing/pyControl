@@ -351,12 +351,14 @@ class Subjectbox(QtGui.QGroupBox):
         self.log_textbox.setReadOnly(True)
 
         self.subjectGridLayout = QtGui.QGridLayout(self)
-        self.Hlayout = QtGui.QGridLayout()
-        self.Hlayout.addWidget(self.boxTitle,0,0)
-        self.Hlayout.addWidget(self.time_label,0,1,QtCore.Qt.AlignRight)
-        self.Hlayout.addWidget(self.time_text,0,2,QtCore.Qt.AlignLeft)
-        self.Hlayout.addWidget(self.start_stop_button,0,3)
-        self.subjectGridLayout.addLayout(self.Hlayout,0,0,1,2)
+        self.subjectHeaderLayout = QtGui.QGridLayout()
+        self.subjectHeaderLayout.addWidget(self.boxTitle,0,1)
+        self.subjectHeaderLayout.addWidget(self.time_label,0,2,QtCore.Qt.AlignRight)
+        self.subjectHeaderLayout.addWidget(self.time_text,0,3,QtCore.Qt.AlignLeft)
+        self.subjectHeaderLayout.addWidget(self.start_stop_button,0,4)
+        self.subjectHeaderLayout.setColumnStretch(0,1)
+        self.subjectHeaderLayout.setColumnStretch(5,1)
+        self.subjectGridLayout.addLayout(self.subjectHeaderLayout,0,0,1,2)
         self.subjectGridLayout.addWidget(self.log_textbox,1,0)
         
     def print_to_log(self, print_string, end='\n'):
@@ -416,7 +418,7 @@ class Subjectbox(QtGui.QGroupBox):
             widget.setEnabled(False)
         self.boxTitle.setStyleSheet("font:15pt;color:grey;")
         if stopped_by_task:
-            telegram_notify("Task stopped. {}".format(self.boxTitle.text()))
+            telegram_notify("Task has stopped in {}".format(self.boxTitle.text()))
 
     def process_data(self, new_data):
         pass
