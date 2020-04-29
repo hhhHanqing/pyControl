@@ -12,7 +12,8 @@ from config.paths import dirs
 from com.pycboard import Pycboard, PyboardError
 from com.data_logger import Data_logger
 from gui.plotting import Experiment_plot
-from gui.dialogs import Variables_dialog, Markov_Variables_dialog, Summary_variables_dialog
+from gui.dialogs import Variables_dialog, Summary_variables_dialog
+from gui.custom_var_dialogs.markov_variable_dialog import *
 from gui.utility import variable_constants
 
 class Run_experiment_tab(QtGui.QWidget):

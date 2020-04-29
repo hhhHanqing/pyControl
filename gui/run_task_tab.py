@@ -11,6 +11,7 @@ from config.paths import dirs
 from config.gui_settings import update_interval
 
 from gui.dialogs import *
+from gui.custom_var_dialogs.markov_variable_dialog import *
 from gui.plotting import Task_plot
 from gui.utility import init_keyboard_shortcuts
 

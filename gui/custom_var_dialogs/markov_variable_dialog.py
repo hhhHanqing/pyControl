@@ -1,5 +1,60 @@
 from pyqtgraph.Qt import QtGui, QtCore, QtWidgets
 
+# Custom Variable dialog
+class Markov_Variables_dialog(QtGui.QDialog):
+    # Dialog for setting and getting task variables.
+    def __init__(self, parent, board):
+        super(QtGui.QDialog, self).__init__(parent)
+        self.setWindowTitle('Set variables')
+        self.layout = QtGui.QVBoxLayout(self)
+        # if board.sm_info['name'] == 'markov':
+        self.setWindowTitle('Markov Variable Setter')
+        self.variables_grid = Markov_grid(self, board)
+        self.layout.addWidget(self.variables_grid)
+        self.layout.setContentsMargins(0,0,0,0)
+        self.setLayout(self.layout)
+        self.diode_was_different=False
+
+    def process_data(self, new_data):
+        for data_array in new_data:
+            if data_array[0]=='P': # printed miessage
+                data_chunks = data_array[2].split(',')
+                if data_chunks[0][0]=='[' and data_chunks[0][-1]==']': # is an incoming message from cerebro
+                    try:
+                        msg_type = data_chunks[1]
+                        if msg_type == 'Btry':
+                            self.variables_grid.markov_gui.update_battery_status(int(data_chunks[2]))
+                        elif msg_type == 'DP':
+                            left_pwr,right_pwr = data_chunks[2].split('-')
+                            if self.variables_grid.markov_gui.diode_power_left.spn.value() != int(left_pwr) or self.variables_grid.markov_gui.diode_power_right.spn.value() != int(right_pwr):
+                                self.diode_was_different = True
+                                QtCore.QTimer.singleShot(500, self.variables_grid.markov_gui.set_diode_powers)
+                            else:
+                                if self.diode_was_different:
+                                    QtCore.QTimer.singleShot(500, self.variables_grid.markov_gui.update_task_diode_powers)
+                                    self.diode_was_different = False
+                        elif msg_type == 'Wave':
+                            start_delay,on_time,off_time,train_dur,ramp_dur = data_chunks[2].split('-')
+                            if self.variables_grid.markov_gui.pulse_train_radio.isChecked():
+                                if self.variables_grid.markov_gui.start_delay.mills_str() != start_delay or self.variables_grid.markov_gui.on_time.mills_str() != on_time or  self.variables_grid.markov_gui.off_time.mills_str() != off_time or  self.variables_grid.markov_gui.train_dur.mills_str() != train_dur or ramp_dur != '0': 
+                                    QtCore.QTimer.singleShot(2500, self.variables_grid.markov_gui.send_waveform_parameters)
+                            else:
+                                if self.variables_grid.markov_gui.start_delay.mills_str() != start_delay or self.variables_grid.markov_gui.on_time.mills_str() != on_time or off_time != '0' or train_dur != '0' or self.variables_grid.markov_gui.ramp_dur.mills_str() != ramp_dur: 
+                                    QtCore.QTimer.singleShot(2500, self.variables_grid.markov_gui.send_waveform_parameters)
+                    except:
+                        print("bad chunk {}".format(data_chunks))
+
+class Markov_grid(QtGui.QWidget):
+    # Grid of variables to set/get, displayed within scroll area of dialog.
+    def __init__(self, parent, board):
+        super(QtGui.QWidget, self).__init__(parent)
+        variables = board.sm_info['variables']
+        self.grid_layout = QtGui.QGridLayout()
+        # if  board.sm_info['name'] == 'markov':
+        initial_variables_dict = {v_name:v_value_str for (v_name, v_value_str) in sorted(variables.items())}
+        self.markov_gui = Markov_GUI(self,self.grid_layout, board,initial_variables_dict)
+        self.setLayout(self.grid_layout)
+
 class Markov_GUI(QtGui.QWidget):
    # For setting and getting a single variable.
     def __init__(self, parent, grid_layout, board,init_vars): # Should split into seperate init and provide info.
