@@ -15,6 +15,7 @@ from gui.plotting import Experiment_plot
 from gui.dialogs import Variables_dialog, Summary_variables_dialog
 from gui.custom_var_dialogs.markov_variable_dialog import *
 from gui.utility import variable_constants
+from gui.telegram_notifications import *
 
 class Run_experiment_tab(QtGui.QWidget):
     '''The run experiment tab is responsible for setting up, running and stopping
@@ -143,7 +144,6 @@ class Run_experiment_tab(QtGui.QWidget):
                         board.process_data()
                 except PyboardError as e:
                     board.print('\n' + str(e))
-                    self.subjectboxes[i].error()
                     self.abort_experiment()
                     return
         # Setup state machines.
@@ -302,7 +302,7 @@ class Run_experiment_tab(QtGui.QWidget):
                 try:
                     board.process_data()
                     if not board.framework_running:
-                        self.subjectboxes[i].task_stopped()
+                        self.subjectboxes[i].task_stopped(stopped_by_task=True)
                     self.subjectboxes[i].time_text.setText(str(datetime.now()-self.subjectboxes[i].start_time).split('.')[0])
                 except PyboardError:
                     self.subjectboxes[i].error()
@@ -404,7 +404,7 @@ class Subjectbox(QtGui.QGroupBox):
         self.run_exp_tab.update_timer.start(update_interval)
         self.boxTitle.setStyleSheet("font:15pt;color:green;")
 
-    def task_stopped(self):
+    def task_stopped(self,stopped_by_task=False):
         '''Called when task stops running.'''
         # Stop running board
         if self.board.framework_running:
@@ -415,6 +415,8 @@ class Subjectbox(QtGui.QGroupBox):
         for widget in (self.boxTitle, self.time_label, self.time_text, self.variables_box):
             widget.setEnabled(False)
         self.boxTitle.setStyleSheet("font:15pt;color:grey;")
+        if stopped_by_task:
+            telegram_notify("Task stopped. {}".format(self.boxTitle.text()))
 
     def process_data(self, new_data):
         pass
