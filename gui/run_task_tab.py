@@ -14,6 +14,7 @@ from gui.dialogs import *
 from gui.custom_var_dialogs.markov_variable_dialog import *
 from gui.plotting import Task_plot
 from gui.utility import init_keyboard_shortcuts
+from gui.telegram_notifications import *
 
 # Run_task_gui ------------------------------------------------------------------------
 
@@ -375,6 +376,8 @@ class Run_task_tab(QtGui.QWidget):
         self.status_text.setText('Uploaded : ' + self.task)
         self.GUI_main.tab_widget.setTabEnabled(1, True) # Enable setups tab.
         self.GUI_main.tab_widget.setTabEnabled(2, True) # Enable setups tab.
+        if stopped_by_task:
+            telegram_notify("Task stopped in {}".format(self.board_select.currentText()))
 
     # Timer updates
 
