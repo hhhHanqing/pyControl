@@ -277,6 +277,7 @@ class Run_experiment_tab(QtGui.QWidget):
         # Clear subjectboxes.
         while len(self.subjectboxes) > 0:
             subjectbox = self.subjectboxes.pop() 
+            subjectbox.telegrammer.delete()
             subjectbox.setParent(None)
             subjectbox.deleteLater()
 
@@ -406,6 +407,12 @@ class Subjectbox(QtGui.QGroupBox):
         self.run_exp_tab.update_timer.start(update_interval)
         self.boxTitle.setStyleSheet("font:15pt;color:green;")
 
+        self.telegrammer = Telegram()
+        telegram_btn = InlineKeyboardButton('get updates for {}'.format(self.boxTitle.text()), callback_data= self.boxTitle.text() )
+        reply_markup = InlineKeyboardMarkup([[telegram_btn]])
+        reply_title = "{} has started!".format(self.boxTitle.text())
+        self.telegrammer.btn_msg_id = self.telegrammer.send_button(reply_title, reply_markup=reply_markup, callback_fxn= self.process_button_press)
+
     def task_stopped(self,stopped_by_task=False):
         '''Called when task stops running.'''
         # Stop running board
@@ -418,7 +425,18 @@ class Subjectbox(QtGui.QGroupBox):
             widget.setEnabled(False)
         self.boxTitle.setStyleSheet("font:15pt;color:grey;")
         if stopped_by_task:
-            telegram_notify("Task has stopped in {}".format(self.boxTitle.text()))
+            self.telegrammer.notify("Task has stopped in {}".format(self.boxTitle.text()))
+        self.telegrammer.close()
 
     def process_data(self, new_data):
         pass
+
+    def process_button_press(self,update,context):
+        self.board.get_variable('trial_current_number___')
+        self.telegrammer.rigBot.answer_callback_query(update.callback_query.id) # send answer so the button doesn't keep on spinning.
+        msg = "<u><b>{}</b></u>\nSession duration = {}\nCurrent trial = {}".format(
+            self.boxTitle.text(),
+            self.time_text.text(),
+            eval(str(self.board.sm_info['variables']['trial_current_number___']))
+            )
+        self.telegrammer.notify(msg)

@@ -185,11 +185,11 @@ def all_states(event):
         print("---------------Speaker Volume is now {}---------------".format(v.speaker_volume))
     Lmsg = hw.Lpump.check_for_serial()
     if Lmsg:
-        print("Stopping Framework. Left pump "+Lmsg)
+        print("Stoping task. Left pump empty")
         stop_framework()
     Rmsg = hw.Rpump.check_for_serial()
     if Rmsg:
-        print("Stopping framework. Right pump "+Rmsg)
+        print("Stopping task. Right pump empty")
         stop_framework()
 
 def run_end():
@@ -199,10 +199,13 @@ def run_end():
 
 ################ helper functions ############
 def start_new_block ():
-    temp_left,temp_right = v.reward_probability_left,v.reward_probability_right 
-    while(temp_left == v.reward_probability_left and temp_right == v.reward_probability_right) or (v.reward_probability_left == 0.2 and v.reward_probability_right == 0.2): #make sure the new probabilities aren't identical to current ones. also make sure they're not both 0.2
-        v.reward_probability_left = choice(v.reward_probability_set___)
-        v.reward_probability_right = choice(v.reward_probability_set___)
+    # temp_left,temp_right = v.reward_probability_left,v.reward_probability_right 
+    # while(temp_left == v.reward_probability_left and temp_right == v.reward_probability_right) or (v.reward_probability_left == 0.2 and v.reward_probability_right == 0.2): #make sure the new probabilities aren't identical to current ones. also make sure they're not both 0.2
+    #     v.reward_probability_left = choice(v.reward_probability_set___)
+    #     v.reward_probability_right = choice(v.reward_probability_set___)
+
+    v.reward_probability_left = 1
+    v.reward_probability_right = 1
 
     v.trial_new_block = v.trial_current_number___ + int(gauss_rand(300,50))
     print('NB,{},{}'.format(v.trial_current_number___,v.trial_new_block))
