@@ -76,7 +76,11 @@ class Run_experiment_tab(QtGui.QWidget):
         self.logs_button.setEnabled(False)
         self.plots_button.setEnabled(False)
         # Setup Telegram
-        self.telegrammer = Telegram(self.subjectboxes)
+        telegram_json = self.get_settings_from_json()
+        if telegram_json['notifications_on']:
+            self.telegrammer = Telegram(self.subjectboxes,telegram_json['bot_token'],telegram_json['chat_id'])
+        else:
+            self.telegrammer = None
         # Setup subjectboxes
         subject_dict = experiment['subjects']
         subjects = subject_dict.keys()
@@ -281,7 +285,9 @@ class Run_experiment_tab(QtGui.QWidget):
             subjectbox = self.subjectboxes.pop() 
             subjectbox.setParent(None)
             subjectbox.deleteLater()
-        self.telegrammer.updater.stop()
+        
+        if self.telegrammer:
+            self.telegrammer.updater.stop()
 
     def show_hide_logs(self):
         '''Show/hide the log textboxes in subjectboxes.'''
@@ -325,6 +331,14 @@ class Run_experiment_tab(QtGui.QWidget):
             self.startstopclose_all_button.setEnabled(True)
             self.stop_experiment()
 
+    def get_settings_from_json(self):
+        json_path = os.path.join(dirs['config'],'telegram.json')
+        if os.path.exists(json_path):
+            with open(json_path,'r') as f:
+                telegram_settings = json.loads(f.read())
+        else:
+            telegram_settings = {} # missing json file
+        return telegram_settings
 # -----------------------------------------------------------------------------
 
 class Subjectbox(QtGui.QGroupBox):
@@ -410,10 +424,11 @@ class Subjectbox(QtGui.QGroupBox):
         self.run_exp_tab.update_timer.start(update_interval)
         self.boxTitle.setStyleSheet("font:15pt;color:green;")
 
-        telegram_btn = InlineKeyboardButton('get updates for {}'.format(self.boxTitle.text()), callback_data= self.boxNum)
-        reply_markup = InlineKeyboardMarkup([[telegram_btn]])
-        reply_title = "{} has started!".format(self.boxTitle.text())
-        self.btn_msg_id = self.parent_telegram.send_button(reply_title, reply_markup=reply_markup)
+        if self.parent_telegram:
+            telegram_btn = InlineKeyboardButton('get updates for {}'.format(self.boxTitle.text()), callback_data= self.boxNum)
+            reply_markup = InlineKeyboardMarkup([[telegram_btn]])
+            reply_title = "{} has started!\nClick the button below to get updates.".format(self.boxTitle.text())
+            self.btn_msg_id = self.parent_telegram.send_button(reply_title, reply_markup=reply_markup)
 
     def task_stopped(self,stopped_by_task=False):
         '''Called when task stops running.'''
@@ -426,9 +441,13 @@ class Subjectbox(QtGui.QGroupBox):
         for widget in (self.boxTitle, self.time_label, self.time_text, self.variables_box):
             widget.setEnabled(False)
         self.boxTitle.setStyleSheet("font:15pt;color:grey;")
-        if stopped_by_task:
-            self.parent_telegram.notify("<u><b>{}</b></u> has stopped".format(self.boxTitle.text()))
-        self.parent_telegram.remove_button(self.btn_msg_id)
+        
+        if self.parent_telegram:
+            if stopped_by_task:
+                self.parent_telegram.notify(
+                    "<u><b>{}</b></u>\n\nTask automatically stopped\nSession duration= {}".format(self.boxTitle.text(),self.time_text.text())
+                )
+            self.parent_telegram.remove_msg(self.btn_msg_id)
 
     def process_data(self, new_data):
         pass

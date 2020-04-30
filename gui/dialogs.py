@@ -328,3 +328,59 @@ class Paths_dialog(QtGui.QDialog):
                 f.write(json.dumps(user_paths))
             self.parent().data_dir_changed = True
             update_paths(user_paths)
+
+class Telegram_dialog(QtGui.QDialog):
+    '''Add telegram conversatoin ID's and choose which ones will receive notifications'''
+    def __init__(self,parent):
+        super(QtGui.QDialog, self).__init__(parent)
+        self.setWindowTitle('Telegram Settings')
+
+        self.Vlayout = QtGui.QGridLayout(self)
+        self.token_lbl = QtWidgets.QLabel("Bot Token")
+        self.token_text = QtWidgets.QLineEdit()
+        self.token_text.setFixedWidth(400)
+        self.chat_lbl = QtWidgets.QLabel("Chat ID")
+        self.chat_text = QtWidgets.QLineEdit()
+        self.chat_text.setFixedWidth(150)
+        self.telegram_enabled_checkbox = QtWidgets.QCheckBox('Enable telegram notifications')
+        self.Vlayout.addWidget(self.token_lbl,0,0,QtCore.Qt.AlignRight)
+        self.Vlayout.addWidget(self.token_text,0,1)
+        self.Vlayout.addWidget(self.chat_lbl,1,0,QtCore.Qt.AlignRight)
+        self.Vlayout.addWidget(self.chat_text,1,1)
+        self.Vlayout.addWidget(self.telegram_enabled_checkbox,2,1)
+
+    def get_settings_from_json(self):
+        json_path = os.path.join(dirs['config'],'telegram.json')
+        if os.path.exists(json_path):
+            with open(json_path,'r') as f:
+                telegram_settings = json.loads(f.read())
+        else:
+            telegram_settings = {} # missing json file
+        return telegram_settings
+
+    def showEvent(self,event):
+        settings = self.get_settings_from_json()
+
+        self.token_text.setText(settings['bot_token'])
+        self.chat_text.setText(str(settings['chat_id']))
+        self.telegram_enabled_checkbox.setChecked(settings['notifications_on'])
+
+    def closeEvent(self, event):
+        '''Save any user edited paths as json in config folder.'''
+
+        telegram_dict = {
+            "bot_token": self.token_text.text(),
+            "chat_id":int(self.chat_text.text()),
+            "notifications_on":self.telegram_enabled_checkbox.isChecked()
+        }
+
+        # Store newly edited paths.
+        json_path = os.path.join(dirs['config'],'telegram.json')
+        if os.path.exists(json_path):
+            with open(json_path,'r') as f:
+                telegram_settings = json.loads(f.read())
+        else:
+            telegram_settings = {}
+        telegram_settings.update(telegram_dict)
+        with open(json_path, 'w') as f:
+            f.write(json.dumps(telegram_settings,indent=4))
