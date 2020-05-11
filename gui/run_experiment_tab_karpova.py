@@ -13,7 +13,7 @@ from com.pycboard import Pycboard, PyboardError
 from com.data_logger import Data_logger
 from gui.plotting import Experiment_plot
 from gui.dialogs import Variables_dialog, Summary_variables_dialog
-from gui.custom_var_dialogs.markov_variable_dialog import *
+from gui.markov_gui.markov_variable_dialog import *
 from gui.utility import variable_constants
 from gui.telegram_notifications import *
 
@@ -425,10 +425,7 @@ class Subjectbox(QtGui.QGroupBox):
         self.boxTitle.setStyleSheet("font:15pt;color:green;")
 
         if self.parent_telegram:
-            telegram_btn = InlineKeyboardButton('get updates for {}'.format(self.boxTitle.text()), callback_data= self.boxNum)
-            reply_markup = InlineKeyboardMarkup([[telegram_btn]])
-            reply_title = "{} has started!\nClick the button below to get updates.".format(self.boxTitle.text())
-            self.btn_msg_id = self.parent_telegram.send_button(reply_title, reply_markup=reply_markup)
+            self.parent_telegram.add_button(self.boxNum,self.boxTitle)
 
     def task_stopped(self,stopped_by_task=False):
         '''Called when task stops running.'''
@@ -447,7 +444,7 @@ class Subjectbox(QtGui.QGroupBox):
                 self.parent_telegram.notify(
                     "<u><b>{}</b></u>\n\nTask automatically stopped\nSession duration= {}".format(self.boxTitle.text(),self.time_text.text())
                 )
-            self.parent_telegram.remove_msg(self.btn_msg_id)
+            self.parent_telegram.remove_button(self.boxNum)
 
     def process_data(self, new_data):
         pass

@@ -6,7 +6,7 @@ from pyqtgraph.Qt import QtGui, QtCore, QtWidgets
 from config.paths import dirs, update_paths
 from gui.utility import variable_constants
 
-from gui.custom_var_dialogs.markov_variable_dialog import *
+from gui.markov_gui.markov_variable_dialog import *
 # Board_config_dialog -------------------------------------------------
 
 flashdrive_message = (

@@ -12,13 +12,34 @@ class Telegram():
         menu_handler = CallbackQueryHandler(self.callback)
         self.dispatcher.add_handler(menu_handler)
         self.updater.start_polling()
+        self.active_rigs_dict = {}
+        self.button_menu_msg_id = None
 
     def notify(self,message):
         self.last_notification = self.rigBot.send_message(chat_id=self.chat_id,text=message, parse_mode='HTML')
 
-    def send_button(self,message,reply_markup):
-        btn_id = self.rigBot.send_message(chat_id=self.chat_id, text=message, reply_markup=reply_markup)
-        return btn_id['message_id']
+    def add_button(self,boxNum,boxTitle):
+        self.active_rigs_dict[str(boxNum)] = InlineKeyboardButton(boxTitle.text(), callback_data= boxNum)
+        self.update_button_menu()
+
+    def remove_button(self,boxNum):
+        del self.active_rigs_dict[str(boxNum)]
+        self.update_button_menu()
+
+    def update_button_menu(self):
+        button_list = []
+        for box_btn in sorted(self.active_rigs_dict.keys()):
+            button_list.append([self.active_rigs_dict[box_btn]])
+
+        button_markup = InlineKeyboardMarkup(button_list)
+
+        if self.button_menu_msg_id:
+            self.remove_msg(self.button_menu_msg_id)
+
+        if self.active_rigs_dict:
+            title = "click rig button below to get updates"
+            btn_id = self.rigBot.send_message(chat_id=self.chat_id, text=title, reply_markup=button_markup)
+            self.button_menu_msg_id = btn_id['message_id']
 
     def remove_msg(self,btn_msg_id):
         self.rigBot.delete_message(chat_id=self.chat_id, message_id=btn_msg_id)
