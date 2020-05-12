@@ -14,6 +14,7 @@ from com.data_logger import Data_logger
 from gui.plotting import Experiment_plot
 from gui.dialogs import Variables_dialog, Summary_variables_dialog
 from gui.markov_gui.markov_variable_dialog import *
+from gui.sequence_gui.sequence_variable_dialog import *
 from gui.utility import variable_constants
 from gui.telegram_notifications import *
 
@@ -353,6 +354,13 @@ class Subjectbox(QtGui.QGroupBox):
         self.state = 'pre_run'
         self.boxNum = boxNum
         self.parent_telegram = self.parent().telegrammer
+        self.tabs = QtGui.QTabWidget()
+        self.logTab = QtGui.QWidget()
+        self.logTab.layout = QtGui.QVBoxLayout()
+        self.varTab = QtGui.QWidget()
+        self.varTab.layout = QtGui.QVBoxLayout()
+        self.tabs.addTab(self.logTab,"Log")
+        self.tabs.addTab(self.varTab,"Variables")
 
         self.boxTitle = QtGui.QLabel(name)
         self.boxTitle.setStyleSheet("font:15pt;color:blue;")
@@ -377,7 +385,9 @@ class Subjectbox(QtGui.QGroupBox):
         self.subjectHeaderLayout.setColumnStretch(0,1)
         self.subjectHeaderLayout.setColumnStretch(5,1)
         self.subjectGridLayout.addLayout(self.subjectHeaderLayout,0,0,1,2)
-        self.subjectGridLayout.addWidget(self.log_textbox,1,0)
+        self.subjectGridLayout.addWidget(self.tabs,1,0,1,2)
+        self.logTab.layout.addWidget(self.log_textbox)
+        self.logTab.setLayout(self.logTab.layout)
         
     def print_to_log(self, print_string, end='\n'):
         self.log_textbox.moveCursor(QtGui.QTextCursor.End)
@@ -389,12 +399,14 @@ class Subjectbox(QtGui.QGroupBox):
         self.board = board
         if self.board.sm_info['name'] == 'markov':
             self.variables_dialog = Markov_Variables_dialog(self, self.board)
+        elif self.board.sm_info['name'] == 'sequence':
+            self.variables_dialog = Sequence_Variables_dialog(self, self.board)
         else:
             self.variables_dialog = Variables_dialog(self, self.board)
         self.board.data_logger.data_consumers.append(self.variables_dialog)
-        self.variables_box= QtGui.QGroupBox('Variables')
-        self.variables_box.setLayout(self.variables_dialog.layout)
-        self.subjectGridLayout.addWidget(self.variables_box,1,1)
+        # self.variables_box= QtGui.QGroupBox('Variables')
+        self.varTab.setLayout(self.variables_dialog.layout)
+        # self.subjectGridLayout.addWidget(self.variables_box,1,1)
         self.start_stop_button.clicked.connect(self.start_stop_rig)
 
     def start_stop_rig(self):
@@ -435,7 +447,7 @@ class Subjectbox(QtGui.QGroupBox):
         self.run_exp_tab.experiment_plot.active_plots.remove(self.boxNum)
         self.run_exp_tab.setups_finished += 1
         self.start_stop_button.setVisible(False)
-        for widget in (self.boxTitle, self.time_label, self.time_text, self.variables_box):
+        for widget in (self.boxTitle, self.time_label, self.time_text, self.varTab):
             widget.setEnabled(False)
         self.boxTitle.setStyleSheet("font:15pt;color:grey;")
         

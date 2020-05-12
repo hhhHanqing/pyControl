@@ -318,12 +318,12 @@ class left_right_vars():
         self.right_spn.setMaximumSize(100,100)
 
         self.get_btn = QtGui.QPushButton('Get')
-        self.get_btn.setMaximumWidth(button_width)
+        self.get_btn.setMinimumWidth(button_width)
         self.get_btn.setAutoDefault(False)
         self.get_btn.clicked.connect(self.get)
 
         self.set_btn = QtGui.QPushButton('Set')
-        self.set_btn .setMaximumWidth(button_width)
+        self.set_btn.setMinimumWidth(button_width)
         self.set_btn.setAutoDefault(False)
         self.set_btn.clicked.connect(self.set)
         
@@ -390,15 +390,14 @@ class single_var():
         self.spn.setMaximumWidth(spin_width)
 
         self.get_btn = QtGui.QPushButton('Get')
-        self.get_btn.setMaximumWidth(button_width)
+        self.get_btn.setMinimumWidth(button_width)
         self.get_btn.setAutoDefault(False)
         self.get_btn.clicked.connect(self.get)
 
         self.set_btn = QtGui.QPushButton('Set')
-        self.set_btn.setMaximumWidth(button_width)
+        self.set_btn.setMinimumWidth(button_width)
         self.set_btn.setAutoDefault(False)
         self.set_btn.clicked.connect(self.set)
-        # self.spn.editingFinished.connect(self.set)
 
     def add_to_grid(self,grid,row):
         grid.addWidget(self.label,row,0)

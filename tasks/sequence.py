@@ -14,7 +14,7 @@ events = [
     ]
 
 ####### Hidden script variables ##########
-v.trial___ = 0
+v.trial_current_number___ = 0
 ##### Configurable Variables #######
 v.background_reward_rate = .1
 v.reward_seq = 'LLR'
@@ -29,8 +29,7 @@ def wait_for_center(event):
         hw.Cpoke.LED.on()
         hw.Rpoke.LED.off()
         hw.Lpoke.LED.off()
-        v.trial___ += 1
-        print(v.current_sequence)
+        v.trial_current_number___ += 1
     elif event == 'C_nose':
         goto_state('wait_for_choice')
 
@@ -54,7 +53,7 @@ def decideReward(choice):
     elif withprob(v.background_reward_rate):
         giveReward(choice)
         outcome = 'B' # reward from background
-    print('rslt,{},{},{},{},{}'.format(v.trial___,v.reward_seq,v.background_reward_rate,choice,outcome))
+    print('rslt,{},{},{},{},{}'.format(v.trial_current_number___,v.reward_seq,v.background_reward_rate,choice,outcome))
     goto_state('wait_for_center')
 
 def giveReward(side):
