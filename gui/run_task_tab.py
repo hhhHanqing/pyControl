@@ -12,6 +12,7 @@ from config.gui_settings import update_interval
 
 from gui.dialogs import *
 from gui.markov_gui.markov_variable_dialog import *
+from gui.sequence_gui.sequence_variable_dialog import *
 from gui.plotting import Task_plot
 from gui.utility import init_keyboard_shortcuts
 from gui.telegram_notifications import *
@@ -300,6 +301,8 @@ class Run_task_tab(QtGui.QWidget):
                 self.variables_dialog.deleteLater()
             if self.board.sm_info['name'] == 'markov':
                 self.variables_dialog = Markov_Variables_dialog(self, self.board)
+            elif self.board.sm_info['name'] == 'sequence':
+                self.variables_dialog = Sequence_Variables_dialog(self, self.board)
             else:
                 self.variables_dialog = Variables_dialog(self, self.board)
             self.data_logger.data_consumers.append(self.variables_dialog)

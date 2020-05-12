@@ -6,7 +6,7 @@ from config.gui_settings import markov_history_len,markov_plot_window
 class Choice_plot():
 
     def __init__(self, parent=None, data_len=100):
-        self.axis = pg.PlotWidget(title='Markov Plot')
+        self.axis = pg.PlotWidget(title='Sequence Plot')
         self.axis.hideAxis('right')
         self.axis.showAxis('left')
         self.axis.setRange(xRange=[-1,markov_plot_window+5], padding=0)
@@ -17,7 +17,7 @@ class Choice_plot():
         no_reward_color = pg.mkColor(0,0,0) # black
         reject_color = pg.mkColor(255,255,0) # yellow
         error_color = pg.mkColor(255,0,0) # red
-        self.my_colors = (reward_color,no_reward_color,error_color,reject_color)
+        self.my_colors = (reward_color,no_reward_color,reject_color)
         self.my_symbols = ('o','+','s') # circle, plus, square
         self.is_markov_task = False
         self.do_update = True
@@ -26,16 +26,17 @@ class Choice_plot():
         self.right_prob = None
         self.next_block_start = 0
         self.last_arrow = None
+        self.last_choice = ''
         
     def set_state_machine(self,sm_info):
-        self.is_markov_task = sm_info['name'] == 'markov'
+        self.is_markov_task = sm_info['name'] == 'sequence'
         if not self.is_markov_task: return
         self.axis.clear()
         self.axis.getAxis('bottom').setLabel('Trial')
         self.axis.getAxis('right').setWidth(75)
         self.axis.getAxis('left').setWidth(50)
 
-        self.axis.setYRange(5,6.5, padding=0.1)
+        self.axis.setYRange(5,8, padding=0.1)
         self.plot = self.axis.plot(pen=None, symbol='o', symbolSize=6, symbolPen=None)
         self.plot2 = self.axis.plot(pen=pg.mkPen(color = (255,154,0,), width=2))
         self.plot3 = self.axis.plot(pen=pg.mkPen(color  = (0,222,255,128), width=2))
@@ -48,7 +49,7 @@ class Choice_plot():
         self.axis.removeItem(self.last_arrow)
         self.trial_num = -1
         self.axis.setTitle('Choices and Outcomes')
-        self.axis.getAxis('left').setTicks([[(6.5,'Left'),(6.25,'Right'),(5.0,'0'),(5.2,'.2'),(5.4,'.4'),(5.6,'.6'),(5.8,'.8'),(6,'1')]])
+        self.axis.getAxis('left').setTicks([[(7,'Left'),(6,'Right')]])
         self.data = np.zeros([self.data_len,6])
 
     def process_data(self, new_data):
@@ -62,42 +63,41 @@ class Choice_plot():
             n_new = len(outcome_msgs)
             self.data = np.roll(self.data, -n_new, axis=0)
             for i, ne in enumerate(outcome_msgs):
-                trial_num_string,left_prob_string,right_prob_string,choice,outcome,isLaserTrial= ne[-1].split(',')[1:]
-                self.left_prob = float(left_prob_string)
-                self.right_prob = float(right_prob_string)
+                trial_num_string,self.reward_seq,background_reward_str,choice,outcome= ne[-1].split(',')[1:]
+                self.background_reward = float(background_reward_str)
                 self.trial_num = int(trial_num_string)
-                if choice == 'L': 
-                    side = 6.5
+                if choice == 'L':
+                    if self.last_choice == 'L':
+                        self.consecutive_adjustment += .1
+                    else:
+                        self.consecutive_adjustment = 0
+                    side = 7 + self.consecutive_adjustment
                 elif choice == 'R':
-                    side = 6.25
+                    if self.last_choice == 'R':
+                        self.consecutive_adjustment += .1
+                    else:
+                        self.consecutive_adjustment = 0
+                    side = 6 - self.consecutive_adjustment
                 else:
                     side = 0
-                if outcome == 'Y': # was rewarded
+                self.last_choice = choice
+
+                if outcome == 'S': # was rewarded
                     color = 0
                     symbol = 0
                 elif outcome == 'N': # was not rewarded
                     color = 1
                     symbol = 0
-                elif outcome == 'X': # error
+                elif outcome == 'B': # background reward
                     color = 2
-                    symbol = 2
-                elif outcome == 'R': # rejected tone
-                    color = 3
-                    symbol = 1
+                    symbol = 0
             
                 self.data[-n_new+i,0] = self.trial_num
                 self.data[-n_new+i,1] = side
                 self.data[-n_new+i,2] = color
                 self.data[-n_new+i,3] = symbol
-                self.data[-n_new+i,4] = self.left_prob + 5
-                self.data[-n_new+i,5] = self.right_prob + 5
-                if self.trial_num < 2:
-                    self.data[:,4] = self.left_prob + 5
-                    self.data[:,5] = self.right_prob + 5
  
             self.plot.setData(self.data[:,0],self.data[:,1],symbol=[self.my_symbols[int(ID)] for ID in self.data[:,3]],symbolSize=10,symbolPen=[pg.mkPen('y') if symbol == 1 else pg.mkPen('w') for symbol in self.data[:,3]],symbolBrush=[self.my_colors[int(ID)] for ID in self.data[:,2]])
-            self.plot2.setData(self.data[:,0],self.data[:,4])
-            self.plot3.setData(self.data[:,0],self.data[:,5])
             self.update_title()
             if self.do_update:
                 self.axis.setRange(xRange=[self.trial_num-markov_plot_window,self.trial_num+5], padding=0)
@@ -131,8 +131,8 @@ class Choice_plot():
             self.axis.setRange(xRange=[self.trial_num-markov_plot_window,self.trial_num+5], padding=0)
 
     def update_title(self):
-        self.axis.setTitle('<font size="4"><span>Completed {} trials---Current Probabilities: </span><span style="color: #FF9A00;">Left={}</span><span style="color: #00DEFF;"> Right={}</span>---New Block in {} trials (@ trial <span style="color:#FF1FE6;">{}</span></font>)'.format(
-            self.trial_num,self.left_prob,self.right_prob,self.next_block_start-self.trial_num,self.next_block_start))
+        self.axis.setTitle('<font size="4"><span>{} Choices made --- Current Reward Sequence: {} --- Background Reward Rate: {}</span></font>'.format(
+            self.trial_num,self.reward_seq,self.background_reward))
 
     def update_block_marker(self,xpos):
         self.axis.removeItem(self.last_arrow)
