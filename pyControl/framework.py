@@ -243,6 +243,10 @@ def receive_data():
             new_channel = data[:-1].decode() # remove ' at beginning and end
             msg = 'K,' + new_channel + '\n'
             state_machine.smd.hw.BaseStation.uart.write(msg)
+        elif data[-1:] == b's': # Set variable.
+            new_channel = data[:-1].decode() # remove ' at beginning and end
+            msg = 'S,' + new_channel + '\n'
+            state_machine.smd.hw.BaseStation.uart.write(msg)
     elif new_byte == b'B': # Request battery info from cerebro
         msg = 'B\n'
         state_machine.smd.hw.BaseStation.uart.write(msg)
@@ -250,6 +254,9 @@ def receive_data():
         state_machine.smd.hw.BaseStation.trigger()
     elif new_byte == b'S': # Invoke base station device's stop
         state_machine.smd.hw.BaseStation.stop()
+    elif new_byte == b'P': # Blink Base Station
+        msg = 'P\n'
+        state_machine.smd.hw.BaseStation.uart.write(msg)
 
 def _update():
     # Perform framework update functions in order of priority.

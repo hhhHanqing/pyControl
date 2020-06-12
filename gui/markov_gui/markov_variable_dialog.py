@@ -71,7 +71,7 @@ class Markov_GUI(QtGui.QWidget):
         self.right_lbl = QtGui.QLabel('<b>Right</b>')
         self.right_lbl.setAlignment(center)
         self.reward_probability = left_right_vars(init_vars,'🎲 <b>Reward Prob</b>',0,1,.1,'','reward_probability')
-        self.req_presses = left_right_vars(init_vars,'👇 <b>Presses</b>',1,100,1,'','required_presses')
+        self.req_presses = left_right_vars(init_vars,'👇<b>Lever Presses</b>',1,100,1,'','required_presses')
         self.reward_volume = left_right_vars(init_vars,'💧 <b>Reward Vol</b>',1,500,25,' µL','reward_volume')
 
         # place widgets in layout
@@ -145,9 +145,11 @@ class Markov_GUI(QtGui.QWidget):
         # create widgets 
         self.cerebro_group = QtGui.QGroupBox('Cerebro')
         self.cerebro_layout = QtGui.QGridLayout()
-        self.cerebro_channel = wave_var(init_vars,'<b>Cerebro Channel</b>',0,120,1,'')
+        self.cerebro_channel = wave_var(init_vars,'<b>Cerebro Channel</b>',0,120,1,'','channel')
+        self.cerebro_channel.setBoard(board)
         self.diode_power_left = wave_var(init_vars,'<b>Left Power</b>',0,1023,1,'','diode_power_left')
         self.diode_power_right = wave_var(init_vars,'<b>Right Power</b>',0,1023,1,'','diode_power_right')
+        self.blink_base_btn = QtGui.QPushButton('Blink Base Station')
         self.cerebro_connect_btn = QtGui.QPushButton('Connect To Cerebro')
         self.cerebro_refresh_btn = QtGui.QPushButton('Refresh')
         self.battery_indicator = QtGui.QProgressBar()
@@ -164,21 +166,22 @@ class Markov_GUI(QtGui.QWidget):
         self.send_waveform_btn = QtGui.QPushButton('Send New Waveform Parameters')
         self.test_btn = QtGui.QPushButton('Click=Trigger       Shift+Click=Stop')
         # place widgets
-        self.cerebro_channel.add_to_grid(self.cerebro_layout,0)
-        self.cerebro_layout.addWidget(self.cerebro_connect_btn,0,2,1,2)
-        self.diode_power_left.add_to_grid(self.cerebro_layout,1)
-        self.diode_power_right.add_to_grid(self.cerebro_layout,1,2)
-        self.cerebro_layout.addWidget(self.cerebro_refresh_btn,2,3)
-        self.cerebro_layout.addWidget(self.battery_indicator,2,0,1,3)
-        self.cerebro_layout.addWidget(self.single_shot_radio,3,1)
-        self.cerebro_layout.addWidget(self.pulse_train_radio,3,2)
-        self.start_delay.add_to_grid(self.cerebro_layout,4,1)
-        self.on_time.add_to_grid(self.cerebro_layout,5)
-        self.off_time.add_to_grid(self.cerebro_layout,5,2)
-        self.ramp_dur.add_to_grid(self.cerebro_layout,6,1)
-        self.train_dur.add_to_grid(self.cerebro_layout,7,1)
-        self.cerebro_layout.addWidget(self.send_waveform_btn,8,1,1,2)
-        self.cerebro_layout.addWidget(self.test_btn,9,0,1,4)
+        self.cerebro_layout.addWidget(self.blink_base_btn,0,0)
+        self.cerebro_channel.add_to_grid(self.cerebro_layout,1)
+        self.cerebro_layout.addWidget(self.cerebro_connect_btn,1,2,1,2)
+        self.diode_power_left.add_to_grid(self.cerebro_layout,2)
+        self.diode_power_right.add_to_grid(self.cerebro_layout,2,2)
+        self.cerebro_layout.addWidget(self.cerebro_refresh_btn,3,3)
+        self.cerebro_layout.addWidget(self.battery_indicator,3,0,1,3)
+        self.cerebro_layout.addWidget(self.single_shot_radio,4,1)
+        self.cerebro_layout.addWidget(self.pulse_train_radio,4,2)
+        self.start_delay.add_to_grid(self.cerebro_layout,5,1)
+        self.on_time.add_to_grid(self.cerebro_layout,6)
+        self.off_time.add_to_grid(self.cerebro_layout,6,2)
+        self.ramp_dur.add_to_grid(self.cerebro_layout,7,1)
+        self.train_dur.add_to_grid(self.cerebro_layout,8,1)
+        self.cerebro_layout.addWidget(self.send_waveform_btn,9,1,1,2)
+        self.cerebro_layout.addWidget(self.test_btn,10,0,1,4)
         self.cerebro_group.setLayout(self.cerebro_layout)
 
         is_pulse_train = (eval(init_vars['pulse_train']))
@@ -200,6 +203,7 @@ class Markov_GUI(QtGui.QWidget):
         self.laser_checkbox.clicked.connect(self.update_laser)
         self.with_tone.clicked.connect(self.update_laser)
         self.with_collection.clicked.connect(self.update_laser)
+        self.blink_base_btn.clicked.connect(self.blink_station)
         self.cerebro_connect_btn.clicked.connect(self.connect_to_cerebro)
         self.cerebro_refresh_btn.clicked.connect(self.get_battery)
         self.single_shot_radio.clicked.connect(self.update_cerebro_input)
@@ -228,7 +232,12 @@ class Markov_GUI(QtGui.QWidget):
 
     def connect_to_cerebro(self):
         if self.board.framework_running:
-            self.board.initialize_cerebro_connection(self.cerebro_channel.spn.value())
+            modifiers = QtWidgets.QApplication.keyboardModifiers()
+            if modifiers == QtCore.Qt.ShiftModifier:
+                self.board.set_cerbero_serial(self.cerebro_channel.spn.value())
+            else:
+                self.board.initialize_cerebro_connection(self.cerebro_channel.spn.value())
+                self.cerebro_channel.set()
 
     def set_diode_powers(self):
         if self.board.framework_running:
@@ -287,6 +296,9 @@ class Markov_GUI(QtGui.QWidget):
 
     def update_battery_status(self,battery_percentage):
         self.battery_indicator.setValue(battery_percentage)
+
+    def blink_station(self):
+        self.board.blink_base()
 
 class left_right_vars():
     def __init__(self,initial_vars_dict,label,min,max,step,suffix,varname=''):

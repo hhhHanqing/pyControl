@@ -8,7 +8,7 @@ from PyQt5.QtCore import Qt
 from config.gui_settings import event_history_len, state_history_len, analog_history_dur, markov_history_len,markov_plot_window
 from gui.utility import detachableTabWidget
 from gui.markov_gui.choice_plot import *
-from gui.sequence_gui.choice_plot import *
+# from gui.sequence_gui.choice_plot import *
 
 # ----------------------------------------------------------------------------------------
 # Task_plot 
