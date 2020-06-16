@@ -145,7 +145,7 @@ class Markov_GUI(QtGui.QWidget):
         # create widgets 
         self.cerebro_group = QtGui.QGroupBox('Cerebro')
         self.cerebro_layout = QtGui.QGridLayout()
-        self.cerebro_channel = wave_var(init_vars,'<b>Cerebro Channel</b>',0,120,1,'','channel')
+        self.cerebro_channel = wave_var(init_vars,'<b>Cerebro Channel</b>',0,120,1,'')
         self.cerebro_channel.setBoard(board)
         self.diode_power_left = wave_var(init_vars,'<b>Left Power</b>',0,1023,1,'','diode_power_left')
         self.diode_power_right = wave_var(init_vars,'<b>Right Power</b>',0,1023,1,'','diode_power_right')
@@ -237,7 +237,6 @@ class Markov_GUI(QtGui.QWidget):
                 self.board.set_cerbero_serial(self.cerebro_channel.spn.value())
             else:
                 self.board.initialize_cerebro_connection(self.cerebro_channel.spn.value())
-                self.cerebro_channel.set()
 
     def set_diode_powers(self):
         if self.board.framework_running:
