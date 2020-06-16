@@ -1,7 +1,7 @@
 from pyControl.utility import *
 import hardware_definition as hw
 
-version = 2019120500 ## YearMonthDayRevision YYYYMMDDrr  can have up to 100 revisions/day
+version = 2020061601 ## YearMonthDayRevision YYYYMMDDrr  can have up to 100 revisions/day
 
 states= [
     'waiting_for_initiation_center',
@@ -199,13 +199,10 @@ def run_end():
 
 ################ helper functions ############
 def start_new_block ():
-    # temp_left,temp_right = v.reward_probability_left,v.reward_probability_right 
-    # while(temp_left == v.reward_probability_left and temp_right == v.reward_probability_right) or (v.reward_probability_left == 0.2 and v.reward_probability_right == 0.2): #make sure the new probabilities aren't identical to current ones. also make sure they're not both 0.2
-    #     v.reward_probability_left = choice(v.reward_probability_set___)
-    #     v.reward_probability_right = choice(v.reward_probability_set___)
-
-    v.reward_probability_left = 1
-    v.reward_probability_right = 1
+    temp_left,temp_right = v.reward_probability_left,v.reward_probability_right 
+    while(temp_left == v.reward_probability_left and temp_right == v.reward_probability_right) or (v.reward_probability_left == 0.2 and v.reward_probability_right == 0.2): #make sure the new probabilities aren't identical to current ones. also make sure they're not both 0.2
+        v.reward_probability_left = choice(v.reward_probability_set___)
+        v.reward_probability_right = choice(v.reward_probability_set___)
 
     v.trial_new_block = v.trial_current_number___ + int(gauss_rand(300,50))
     print('NB,{},{}'.format(v.trial_current_number___,v.trial_new_block))
