@@ -205,7 +205,7 @@ def output_data(event):
         checksum  = (sum(data_len + timestamp) + sum(data_bytes)).to_bytes(2, 'little')
         usb_serial.send(start_byte + data_len + timestamp + checksum + data_bytes)
 
-def recieve_data():
+def receive_data():
     # Read and process data from computer.
     global running
     new_byte = usb_serial.read(1) 
@@ -225,6 +225,38 @@ def recieve_data():
             v_name = data[:-1].decode()
             v_str = state_machine._get_variable(v_name)
             data_output_queue.put((current_time, varbl_typ, (v_name, v_str)))
+    elif new_byte == b'C': # Cerebro command
+        data_len = int.from_bytes(usb_serial.read(2), 'little')
+        data = usb_serial.read(data_len)
+        checksum = int.from_bytes(usb_serial.read(2), 'little')
+        if not checksum == (sum(data) & 0xFFFF):
+            return  # Bad checksum.
+        if data[-1:] == b'd': # Set variable.
+            diode_parameters = data[:-1].decode()[1:-1] # remove ' at beginning and end
+            msg = 'D,' + diode_parameters + '\n'
+            state_machine.smd.hw.BaseStation.uart.write(msg)
+        elif data[-1:] == b'w': # Set variable.
+            wave_parameters = data[:-1].decode()[1:-1] # remove ' at beginning and end
+            msg = 'W,' + wave_parameters + '\n'
+            state_machine.smd.hw.BaseStation.uart.write(msg)
+        elif data[-1:] == b'n': # Set variable.
+            new_channel = data[:-1].decode() # remove ' at beginning and end
+            msg = 'K,' + new_channel + '\n'
+            state_machine.smd.hw.BaseStation.uart.write(msg)
+        elif data[-1:] == b's': # Set variable.
+            new_channel = data[:-1].decode() # remove ' at beginning and end
+            msg = 'S,' + new_channel + '\n'
+            state_machine.smd.hw.BaseStation.uart.write(msg)
+    elif new_byte == b'B': # Request battery info from cerebro
+        msg = 'B\n'
+        state_machine.smd.hw.BaseStation.uart.write(msg)
+    elif new_byte == b'T': # Invoke base station device's trigger
+        state_machine.smd.hw.BaseStation.trigger()
+    elif new_byte == b'S': # Invoke base station device's stop
+        state_machine.smd.hw.BaseStation.stop()
+    elif new_byte == b'P': # Blink Base Station
+        msg = 'P\n'
+        state_machine.smd.hw.BaseStation.uart.write(msg)
 
 def _update():
     # Perform framework update functions in order of priority.
@@ -256,7 +288,7 @@ def _update():
             running = False
 
     elif usb_serial.any(): # Priority 5: Check for serial input from computer.
-        recieve_data()
+        receive_data()
 
     elif hw.stream_data_queue.available: # Priority 6: Stream analog data.
         hw.IO_dict[hw.stream_data_queue.get()]._process_streaming()

@@ -1,7 +1,7 @@
 from pyControl.utility import *
 import hardware_definition as hw
 
-version = 2019120500 ## YearMonthDayRevision YYYYMMDDrr  can have up to 100 revisions/day
+version = 2020061901 ## YearMonthDayRevision YYYYMMDDrr  can have up to 100 revisions/day
 
 states= [
     'waiting_for_initiation_center',
@@ -21,6 +21,7 @@ events = [
     'L_lever',
     'button',
     'tone_off',
+    'check_serial',
     ]
 
 ####### Hidden script variables ##########
@@ -32,7 +33,6 @@ v.old_tone___ = ''
 v.repeats___ = 0
 v.outcome___ = 'R'
 v.speaker_is_playing___ = False
-v.continuous_tone___ = True
 v.laser_trial___ = False
 v.last_trial_was_laser___ = False
 
@@ -52,6 +52,7 @@ v.reward_volume_right = 250 # microliters
 
 #Other variables
 v.speaker_volume = 20 # Speaker volume (range 1 - 30)
+v.continuous_tone = True
 v.time_tone_duration_seconds = 1.5 
 v.time_reward_available_minutes = 10 # minutes 
 v.time_error_freeze_seconds = 1.5 #seconds
@@ -60,6 +61,16 @@ v.trial_new_block = 0
 v.laser_probability = .25
 v.laser_with_tone = False
 v.laser_with_collection = False
+
+#Cerebro variables
+v.diode_power_left = 0
+v.diode_power_right = 0
+v.pulse_train = False
+v.start_delay = 0
+v.on_time = 2
+v.off_time = 0
+v.train_dur = 0
+v.ramp_dur = 0.3
 
 initial_state = 'waiting_for_initiation_center'
 
@@ -73,6 +84,7 @@ def run_start():
     v.trial_current_number___ = 0
     v.trial_new_block = 0
     hw.Speakers.set_volume(v.speaker_volume)
+    set_timer('check_serial',10)
 
 def waiting_for_initiation_center(event):
     if event == 'entry':
@@ -86,12 +98,12 @@ def offering_left(event):
     if event == 'entry':
         v.speaker_is_playing___ = hw.Speakers.play('Left')
         extend_levers()
-        if not v.continuous_tone___:
+        if not v.continuous_tone:
             set_timer('tone_off', v.time_tone_duration_seconds*second,True)
     elif event == 'C_nose': #reject left side
         goto_state('reject')
     elif event == 'L_lever':
-        if v.left_presses___==0 and not v.continuous_tone___: # if this is the first lever press and the tone this is not a continuous tone
+        if v.left_presses___==0 and not v.continuous_tone: # if this is the first lever press and the tone this is not a continuous tone
             stop_tone()
         v.left_presses___ += 1
         if v.left_presses___ == v.required_presses_left:
@@ -107,14 +119,14 @@ def offering_right(event):
     if event == 'entry':
         v.speaker_is_playing___ = hw.Speakers.play('Right')
         extend_levers()
-        if not v.continuous_tone___:
+        if not v.continuous_tone:
             set_timer('tone_off', v.time_tone_duration_seconds*second,True)
     elif event == 'C_nose': # reject right side
         goto_state('reject')
     elif event == 'L_lever':
         goto_state('error')
     elif event == 'R_lever':
-        if v.right_presses___==0 and not v.continuous_tone___: # if this is the first lever press and the tone this isn't a continuous tone
+        if v.right_presses___==0 and not v.continuous_tone: # if this is the first lever press and the tone this isn't a continuous tone
             stop_tone()
         v.right_presses___ +=1
         if v.right_presses___ == v.required_presses_right:
@@ -161,18 +173,23 @@ def waiting_for_collection_right(event):
         goto_state('waiting_for_initiation_center')  
 
 def all_states(event):
-    if event == 'button':
+    if event == 'check_serial':
+        set_timer('check_serial',10)
+        msg = hw.BaseStation.check_for_serial()
+        if msg:
+            print(msg)
+    elif event == 'button':
         hw.Lpump.infuse(v.reward_volume_left)
         hw.Rpump.infuse(v.reward_volume_left)
         hw.Speakers.set_volume(v.speaker_volume)
         print("---------------Speaker Volume is now {}---------------".format(v.speaker_volume))
     Lmsg = hw.Lpump.check_for_serial()
     if Lmsg:
-        print("Stopping Framework. Left pump "+Lmsg)
+        print("Stopping task. Left pump empty")
         stop_framework()
     Rmsg = hw.Rpump.check_for_serial()
     if Rmsg:
-        print("Stopping framework. Right pump "+Rmsg)
+        print("Stopping task. Right pump empty")
         stop_framework()
 
 def run_end():

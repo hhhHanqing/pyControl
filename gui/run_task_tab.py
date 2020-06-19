@@ -10,9 +10,12 @@ from com.data_logger import Data_logger
 from config.paths import dirs
 from config.gui_settings import update_interval
 
-from gui.dialogs import Variables_dialog
+from gui.dialogs import *
+from gui.markov_gui.markov_variable_dialog import *
+from gui.sequence_gui.sequence_variable_dialog import *
 from gui.plotting import Task_plot
 from gui.utility import init_keyboard_shortcuts
+from gui.telegram_notifications import *
 
 # Run_task_gui ------------------------------------------------------------------------
 
@@ -296,7 +299,13 @@ class Run_task_tab(QtGui.QWidget):
             if self.variables_dialog:
                 self.variables_button.clicked.disconnect()
                 self.variables_dialog.deleteLater()
-            self.variables_dialog = Variables_dialog(self, self.board)
+            if self.board.sm_info['name'] == 'markov':
+                self.variables_dialog = Markov_Variables_dialog(self, self.board)
+            elif self.board.sm_info['name'] == 'sequence':
+                self.variables_dialog = Sequence_Variables_dialog(self, self.board)
+            else:
+                self.variables_dialog = Variables_dialog(self, self.board)
+            self.data_logger.data_consumers.append(self.variables_dialog)
             self.variables_button.clicked.connect(self.variables_dialog.exec_)
             self.variables_button.setEnabled(True)
             self.task_plot.set_state_machine(self.board.sm_info)
@@ -370,6 +379,8 @@ class Run_task_tab(QtGui.QWidget):
         self.status_text.setText('Uploaded : ' + self.task)
         self.GUI_main.tab_widget.setTabEnabled(1, True) # Enable setups tab.
         self.GUI_main.tab_widget.setTabEnabled(2, True) # Enable setups tab.
+        if stopped_by_task:
+            telegram_notify("Task stopped in {}".format(self.board_select.currentText()))
 
     # Timer updates
 

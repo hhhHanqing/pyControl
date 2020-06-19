@@ -13,7 +13,10 @@ from com.pycboard import Pycboard, PyboardError
 from com.data_logger import Data_logger
 from gui.plotting import Experiment_plot
 from gui.dialogs import Variables_dialog, Summary_variables_dialog
+from gui.markov_gui.markov_variable_dialog import *
+from gui.sequence_gui.sequence_variable_dialog import *
 from gui.utility import variable_constants
+from gui.telegram_notifications import *
 
 class Run_experiment_tab(QtGui.QWidget):
     '''The run experiment tab is responsible for setting up, running and stopping
@@ -73,6 +76,12 @@ class Run_experiment_tab(QtGui.QWidget):
         self.startstopclose_all_button.setEnabled(False)
         self.logs_button.setEnabled(False)
         self.plots_button.setEnabled(False)
+        # Setup Telegram
+        telegram_json = self.get_settings_from_json()
+        if telegram_json['notifications_on']:
+            self.telegrammer = Telegram(self.subjectboxes,telegram_json['bot_token'],telegram_json['chat_id'])
+        else:
+            self.telegrammer = None
         # Setup subjectboxes
         subject_dict = experiment['subjects']
         subjects = subject_dict.keys()
@@ -142,7 +151,6 @@ class Run_experiment_tab(QtGui.QWidget):
                         board.process_data()
                 except PyboardError as e:
                     board.print('\n' + str(e))
-                    self.subjectboxes[i].error()
                     self.abort_experiment()
                     return
         # Setup state machines.
@@ -201,7 +209,6 @@ class Run_experiment_tab(QtGui.QWidget):
         self.startstopclose_all_button.setEnabled(True)
         self.setups_finished = 0
         self.setups_running  = 0
-        self.show_hide_logs()
 
     def startstopclose_all(self):
         if self.setups_running == 0:
@@ -279,6 +286,9 @@ class Run_experiment_tab(QtGui.QWidget):
             subjectbox = self.subjectboxes.pop() 
             subjectbox.setParent(None)
             subjectbox.deleteLater()
+        
+        if self.telegrammer:
+            self.telegrammer.updater.stop()
 
     def show_hide_logs(self):
         '''Show/hide the log textboxes in subjectboxes.'''
@@ -302,7 +312,7 @@ class Run_experiment_tab(QtGui.QWidget):
                 try:
                     board.process_data()
                     if not board.framework_running:
-                        self.subjectboxes[i].task_stopped()
+                        self.subjectboxes[i].task_stopped(stopped_by_task=True)
                     self.subjectboxes[i].time_text.setText(str(datetime.now()-self.subjectboxes[i].start_time).split('.')[0])
                 except PyboardError:
                     self.subjectboxes[i].error()
@@ -322,6 +332,14 @@ class Run_experiment_tab(QtGui.QWidget):
             self.startstopclose_all_button.setEnabled(True)
             self.stop_experiment()
 
+    def get_settings_from_json(self):
+        json_path = os.path.join(dirs['config'],'telegram.json')
+        if os.path.exists(json_path):
+            with open(json_path,'r') as f:
+                telegram_settings = json.loads(f.read())
+        else:
+            telegram_settings = {} # missing json file
+        return telegram_settings
 # -----------------------------------------------------------------------------
 
 class Subjectbox(QtGui.QGroupBox):
@@ -335,6 +353,14 @@ class Subjectbox(QtGui.QGroupBox):
         self.run_exp_tab = self.parent()
         self.state = 'pre_run'
         self.boxNum = boxNum
+        self.parent_telegram = self.parent().telegrammer
+        self.tabs = QtGui.QTabWidget()
+        self.logTab = QtGui.QWidget()
+        self.logTab.layout = QtGui.QVBoxLayout()
+        self.varTab = QtGui.QWidget()
+        self.varTab.layout = QtGui.QVBoxLayout()
+        self.tabs.addTab(self.logTab,"Log")
+        self.tabs.addTab(self.varTab,"Variables")
 
         self.boxTitle = QtGui.QLabel(name)
         self.boxTitle.setStyleSheet("font:15pt;color:blue;")
@@ -346,19 +372,22 @@ class Subjectbox(QtGui.QGroupBox):
         self.time_text.setReadOnly(True)
         self.time_text.setFixedWidth(60)
         self.log_textbox = QtGui.QTextEdit()
-        self.log_textbox.setMinimumHeight(180)
+        self.log_textbox.setMinimumWidth(415)
         self.log_textbox.setFont(QtGui.QFont('Courier', 9))
         self.log_textbox.setReadOnly(True)
 
-        self.Vlayout = QtGui.QVBoxLayout(self)
-        self.Hlayout = QtGui.QHBoxLayout()
-        self.Hlayout.addWidget(self.boxTitle)
-        self.Hlayout.addWidget(self.start_stop_button)
-        self.Hlayout.addWidget(self.time_label)
-        self.Hlayout.addWidget(self.time_text)
-        self.Hlayout.addStretch(1)
-        self.Vlayout.addLayout(self.Hlayout)
-        self.Vlayout.addWidget(self.log_textbox)
+        self.subjectGridLayout = QtGui.QGridLayout(self)
+        self.subjectHeaderLayout = QtGui.QGridLayout()
+        self.subjectHeaderLayout.addWidget(self.boxTitle,0,1)
+        self.subjectHeaderLayout.addWidget(self.time_label,0,2,QtCore.Qt.AlignRight)
+        self.subjectHeaderLayout.addWidget(self.time_text,0,3,QtCore.Qt.AlignLeft)
+        self.subjectHeaderLayout.addWidget(self.start_stop_button,0,4)
+        self.subjectHeaderLayout.setColumnStretch(0,1)
+        self.subjectHeaderLayout.setColumnStretch(5,1)
+        self.subjectGridLayout.addLayout(self.subjectHeaderLayout,0,0,1,2)
+        self.subjectGridLayout.addWidget(self.tabs,1,0,1,2)
+        self.logTab.layout.addWidget(self.log_textbox)
+        self.logTab.setLayout(self.logTab.layout)
         
     def print_to_log(self, print_string, end='\n'):
         self.log_textbox.moveCursor(QtGui.QTextCursor.End)
@@ -368,10 +397,16 @@ class Subjectbox(QtGui.QGroupBox):
 
     def assign_board(self, board):
         self.board = board
-        self.variables_dialog = Variables_dialog(self, board)
-        self.variables_box= QtGui.QGroupBox('Variables')
-        self.variables_box.setLayout(self.variables_dialog.layout)
-        self.Vlayout.addWidget(self.variables_box)
+        if self.board.sm_info['name'] == 'markov':
+            self.variables_dialog = Markov_Variables_dialog(self, self.board)
+        elif self.board.sm_info['name'] == 'sequence':
+            self.variables_dialog = Sequence_Variables_dialog(self, self.board)
+        else:
+            self.variables_dialog = Variables_dialog(self, self.board)
+        self.board.data_logger.data_consumers.append(self.variables_dialog)
+        # self.variables_box= QtGui.QGroupBox('Variables')
+        self.varTab.setLayout(self.variables_dialog.layout)
+        # self.subjectGridLayout.addWidget(self.variables_box,1,1)
         self.start_stop_button.clicked.connect(self.start_stop_rig)
 
     def start_stop_rig(self):
@@ -399,8 +434,12 @@ class Subjectbox(QtGui.QGroupBox):
 
         self.run_exp_tab.GUI_main.refresh_timer.stop()
         self.run_exp_tab.update_timer.start(update_interval)
+        self.boxTitle.setStyleSheet("font:15pt;color:green;")
 
-    def task_stopped(self):
+        if self.parent_telegram:
+            self.parent_telegram.add_button(self.boxNum,self.boxTitle)
+
+    def task_stopped(self,stopped_by_task=False):
         '''Called when task stops running.'''
         # Stop running board
         if self.board.framework_running:
@@ -408,8 +447,16 @@ class Subjectbox(QtGui.QGroupBox):
         self.run_exp_tab.experiment_plot.active_plots.remove(self.boxNum)
         self.run_exp_tab.setups_finished += 1
         self.start_stop_button.setVisible(False)
-        for widget in (self.boxTitle, self.time_label, self.time_text, self.variables_box):
+        for widget in (self.boxTitle, self.time_label, self.time_text, self.varTab):
             widget.setEnabled(False)
+        self.boxTitle.setStyleSheet("font:15pt;color:grey;")
+        
+        if self.parent_telegram:
+            if stopped_by_task:
+                self.parent_telegram.notify(
+                    "<u><b>{}</b></u>\n\nTask automatically stopped\nSession duration= {}".format(self.boxTitle.text(),self.time_text.text())
+                )
+            self.parent_telegram.remove_button(self.boxNum)
 
     def process_data(self, new_data):
         pass

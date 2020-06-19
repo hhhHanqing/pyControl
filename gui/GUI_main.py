@@ -8,7 +8,7 @@ from pyqtgraph.Qt import QtGui, QtCore
 from config.paths import dirs
 from config.gui_settings import  VERSION
 from gui.run_task_tab import Run_task_tab
-from gui.dialogs import Board_config_dialog, Keyboard_shortcuts_dialog, Paths_dialog
+from gui.dialogs import Board_config_dialog, Keyboard_shortcuts_dialog, Paths_dialog, Telegram_dialog
 from gui.configure_experiment_tab import Configure_experiment_tab
 from gui.run_experiment_tab_karpova import Run_experiment_tab
 from gui.setups_tab import Setups_tab
@@ -41,6 +41,7 @@ class GUI_main(QtGui.QMainWindow):
         self.config_dialog = Board_config_dialog(parent=self)
         self.shortcuts_dialog = Keyboard_shortcuts_dialog(parent=self)
         self.paths_dialog = Paths_dialog(parent=self)
+        self.telegram_dialog = Telegram_dialog(parent=self)
 
         # Widgets.
         self.tab_widget = QtGui.QTabWidget(self)
@@ -91,6 +92,9 @@ class GUI_main(QtGui.QMainWindow):
         paths_action = QtGui.QAction("&Folder paths", self)
         paths_action.triggered.connect(self.paths_dialog.exec)
         settings_menu.addAction(paths_action)
+        telegram_action = QtGui.QAction("&Telegram", self)
+        telegram_action.triggered.connect(self.telegram_dialog.exec)
+        settings_menu.addAction(telegram_action)
         # ---------Help menu----------
         help_menu= main_menu.addMenu('Help')
         # Go to readthedocs

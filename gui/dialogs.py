@@ -6,7 +6,7 @@ from pyqtgraph.Qt import QtGui, QtCore, QtWidgets
 from config.paths import dirs, update_paths
 from gui.utility import variable_constants
 
-from gui.markov_variable_dialog import *
+from gui.markov_gui.markov_variable_dialog import *
 # Board_config_dialog -------------------------------------------------
 
 flashdrive_message = (
@@ -82,19 +82,15 @@ class Variables_dialog(QtGui.QDialog):
     def __init__(self, parent, board):
         super(QtGui.QDialog, self).__init__(parent)
         self.setWindowTitle('Set variables')
+        self.scroll_area = QtGui.QScrollArea(parent=self)
+        self.scroll_area.setWidgetResizable(True)
+        self.variables_grid = Variables_grid(self.scroll_area, board)
+        self.scroll_area.setWidget(self.variables_grid)
         self.layout = QtGui.QVBoxLayout(self)
-        if board.sm_info['name'] == 'markov':
-            self.setWindowTitle('Markov Variable Setter')
-            self.variables_grid = Variables_grid(self, board)
-            self.layout.addWidget(self.variables_grid)
-            self.layout.setContentsMargins(0,0,0,0)
-        else:
-            self.scroll_area = QtGui.QScrollArea(parent=self)
-            self.scroll_area.setWidgetResizable(True)
-            self.variables_grid = Variables_grid(self.scroll_area, board)
-            self.scroll_area.setWidget(self.variables_grid)
-            self.layout.addWidget(self.scroll_area) 
+        self.layout.addWidget(self.scroll_area)
         self.setLayout(self.layout)
+    def process_data(self, new_data):
+        return
 
 class Variables_grid(QtGui.QWidget):
     # Grid of variables to set/get, displayed within scroll area of dialog.
@@ -102,16 +98,10 @@ class Variables_grid(QtGui.QWidget):
         super(QtGui.QWidget, self).__init__(parent)
         variables = board.sm_info['variables']
         self.grid_layout = QtGui.QGridLayout()
-        if  board.sm_info['name'] == 'markov':
-            initial_variables_dict = {v_name:v_value_str for (v_name, v_value_str) in sorted(variables.items())}
-            Markov_setter(self.grid_layout, self, board,initial_variables_dict)
-        else:
-            for i, (v_name, v_value_str) in enumerate(sorted(variables.items())):
-                if '___' not in (v_name):
-                    Variable_setter(v_name, v_value_str, self.grid_layout, i, self, board)
-            self.grid_layout.setRowStretch(i,1) # prevents rows of variables from be spread evenly to fill vertical space. 
+        for i, (v_name, v_value_str) in enumerate(sorted(variables.items())):
+            if not v_name[-3:] == '___':
+                Variable_setter(v_name, v_value_str, self.grid_layout, i, self, board)
         self.setLayout(self.grid_layout)
-
 
 class Variable_setter(QtGui.QWidget):
     # For setting and getting a single variable.
@@ -338,3 +328,59 @@ class Paths_dialog(QtGui.QDialog):
                 f.write(json.dumps(user_paths))
             self.parent().data_dir_changed = True
             update_paths(user_paths)
+
+class Telegram_dialog(QtGui.QDialog):
+    '''Add telegram conversatoin ID's and choose which ones will receive notifications'''
+    def __init__(self,parent):
+        super(QtGui.QDialog, self).__init__(parent)
+        self.setWindowTitle('Telegram Settings')
+
+        self.Vlayout = QtGui.QGridLayout(self)
+        self.token_lbl = QtWidgets.QLabel("Bot Token")
+        self.token_text = QtWidgets.QLineEdit()
+        self.token_text.setFixedWidth(400)
+        self.chat_lbl = QtWidgets.QLabel("Chat ID")
+        self.chat_text = QtWidgets.QLineEdit()
+        self.chat_text.setFixedWidth(150)
+        self.telegram_enabled_checkbox = QtWidgets.QCheckBox('Enable telegram notifications')
+        self.Vlayout.addWidget(self.token_lbl,0,0,QtCore.Qt.AlignRight)
+        self.Vlayout.addWidget(self.token_text,0,1)
+        self.Vlayout.addWidget(self.chat_lbl,1,0,QtCore.Qt.AlignRight)
+        self.Vlayout.addWidget(self.chat_text,1,1)
+        self.Vlayout.addWidget(self.telegram_enabled_checkbox,2,1)
+
+    def get_settings_from_json(self):
+        json_path = os.path.join(dirs['config'],'telegram.json')
+        if os.path.exists(json_path):
+            with open(json_path,'r') as f:
+                telegram_settings = json.loads(f.read())
+        else:
+            telegram_settings = {} # missing json file
+        return telegram_settings
+
+    def showEvent(self,event):
+        settings = self.get_settings_from_json()
+
+        self.token_text.setText(settings['bot_token'])
+        self.chat_text.setText(str(settings['chat_id']))
+        self.telegram_enabled_checkbox.setChecked(settings['notifications_on'])
+
+    def closeEvent(self, event):
+        '''Save any user edited paths as json in config folder.'''
+
+        telegram_dict = {
+            "bot_token": self.token_text.text(),
+            "chat_id":int(self.chat_text.text()),
+            "notifications_on":self.telegram_enabled_checkbox.isChecked()
+        }
+
+        # Store newly edited paths.
+        json_path = os.path.join(dirs['config'],'telegram.json')
+        if os.path.exists(json_path):
+            with open(json_path,'r') as f:
+                telegram_settings = json.loads(f.read())
+        else:
+            telegram_settings = {}
+        telegram_settings.update(telegram_dict)
+        with open(json_path, 'w') as f:
+            f.write(json.dumps(telegram_settings,indent=4))

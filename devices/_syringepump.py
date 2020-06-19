@@ -5,7 +5,7 @@ class Syringe_pump():
     def __init__(self, port):
         assert port.UART is not None, '! Pump needs port with UART.'
         self.uart = UART(port.UART, 9600)
-        self.uart.init(9600, bits=8, parity=None, stop=1, timeout=1)
+        self.uart.init(9600, bits=8, parity=None, stop=1, timeout=100)
         self.uart.write('C')
 
     def infuse(self,val):

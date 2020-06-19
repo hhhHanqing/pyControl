@@ -434,3 +434,59 @@ class Pycboard(Pyboard):
         else: # Get variable using REPL.
             return eval(self.eval("state_machine._get_variable({})"
                                   .format(repr(v_name))).decode())
+
+
+    # ------------------------------------------------------------------------------------
+    #Base Station Communication
+    # ------------------------------------------------------------------------------------
+    def initialize_cerebro_connection(self,cerebro_radio_channel):
+        if self.framework_running: # Set variable with serial command.
+            data = repr(cerebro_radio_channel).encode() + b'n'
+            data_len = len(data).to_bytes(2, 'little')
+            checksum = sum(data).to_bytes(2, 'little')
+            self.serial.write(b'C' + data_len + data + checksum)
+            return None
+
+    def set_diode_powers(self,left_pwr,right_pwr):
+        if self.framework_running: # Set variable with serial command.
+            data = repr('{},{}'.format(left_pwr,right_pwr)).encode() + b'd'
+            data_len = len(data).to_bytes(2, 'little')
+            checksum = sum(data).to_bytes(2, 'little')
+            self.serial.write(b'C' + data_len + data + checksum)
+            return None
+
+    def set_waveform(self,start_delay,on_time,off_time,train_dur,ramp_dur):
+        if self.framework_running: # Set variable with serial command.
+            data = repr('{},{},{},{},{}'.format(start_delay,on_time,off_time,train_dur,ramp_dur)).encode() + b'w'
+            data_len = len(data).to_bytes(2, 'little')
+            checksum = sum(data).to_bytes(2, 'little')
+            self.serial.write(b'C' + data_len + data + checksum)
+            return None
+    
+    def get_cerebro_battery(self):
+        if self.framework_running:
+            self.serial.write(b'B')
+            return None
+
+    def test_base_trigger(self):
+        if self.framework_running:
+            self.serial.write(b'T')
+            return None
+
+    def test_base_stop(self):
+        if self.framework_running:
+            self.serial.write(b'S')
+            return None
+
+    def blink_base(self):
+        if self.framework_running:
+            self.serial.write(b'P')
+            return None 
+
+    def set_cerbero_serial(self,cerebro_radio_channel):
+        if self.framework_running: # Set variable with serial command.
+            data = repr(cerebro_radio_channel).encode() + b's'
+            data_len = len(data).to_bytes(2, 'little')
+            checksum = sum(data).to_bytes(2, 'little')
+            self.serial.write(b'C' + data_len + data + checksum)
+            return None
