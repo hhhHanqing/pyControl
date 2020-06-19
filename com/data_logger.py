@@ -2,6 +2,7 @@ import os
 import json
 from datetime import datetime
 from shutil import copyfile
+import  tools.markov_data_cleaner as mc
 
 class Data_logger():
     '''Class for logging data from a pyControl setup to disk'''
@@ -54,6 +55,12 @@ class Data_logger():
     def close_files(self):
         if self.data_file:
             self.data_file.close()
+            print('Local file closed')
+            try:
+                print('cleaning and saving data to network drive')
+                mc.Log_cleaner(self.file_path).clean()
+            except:
+                print('error trying to clean data log')
             self.data_file = None
             self.file_path = None
         for analog_file in self.analog_files.values():
