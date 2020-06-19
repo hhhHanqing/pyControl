@@ -7,16 +7,16 @@ class Markov_setter(QtGui.QWidget):
         self.board = board
 
         center = QtCore.Qt.AlignCenter
-        self.left_right_box = QtGui.QGroupBox('Left and Right Varibles')
+        self.left_right_box = QtGui.QGroupBox('Left and Right Variables')
         self.left_right_layout = QtGui.QGridLayout()
 
         self.left_lbl = QtGui.QLabel('<b>Left</b>')
         self.left_lbl.setAlignment(center)
         self.right_lbl = QtGui.QLabel('<b>Right</b>')
         self.right_lbl.setAlignment(center)
-        self.reward_probability = left_right_vars(init_vars,'<b>Reward Probability 🎲</b>',0,1,.1,'','reward_probability')
-        self.req_presses = left_right_vars(init_vars,'<b>Required Presses 👇</b>',1,100,1,'','required_presses')
-        self.reward_volume = left_right_vars(init_vars,'<b>Reward Volume 💧</b>',1,500,25,' µL','reward_volume')
+        self.reward_probability = left_right_vars(init_vars,'<b>Reward Prob 🎲 </b>',0,1,.1,'','reward_probability')
+        self.req_presses = left_right_vars(init_vars,'<b>Presses 👇 </b>',1,100,1,'','required_presses')
+        self.reward_volume = left_right_vars(init_vars,'<b>Reward Vol 💧 </b>',1,500,25,' µL','reward_volume')
 
         self.left_right_layout.addWidget(self.left_lbl,0,1)
         self.left_right_layout.addWidget(self.right_lbl,0,2)
@@ -60,7 +60,7 @@ class Markov_setter(QtGui.QWidget):
         self.laser_checkbox.setChecked(laserIsChecked)
 
         self.laser_onset_lbl = QtGui.QLabel('<b>Laser Onset</b>')
-        self.laser_onset_lbl.setAlignment(QtCore.Qt.AlignRight)
+        self.laser_onset_lbl.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
         self.laser_onset_lbl.setEnabled(laserIsChecked)
         self.with_tone = QtGui.QRadioButton('With Tone')
         self.with_tone.setEnabled(laserIsChecked)
@@ -82,8 +82,8 @@ class Markov_setter(QtGui.QWidget):
         grid_layout.addWidget(self.left_right_box,0,0,1,2)
         grid_layout.addWidget(self.other_box,1,0)
         grid_layout.addWidget(self.laser_group,2,0)
-        grid_layout.addWidget(QtGui.QLabel(''),0,9,5,1)
         grid_layout.setColumnStretch(9,1)
+        grid_layout.setRowStretch(10,1)
 
         self.laser_checkbox.clicked.connect(self.update_laser)
         self.with_tone.clicked.connect(self.update_laser)
@@ -111,9 +111,12 @@ class Markov_setter(QtGui.QWidget):
 class left_right_vars():
     def __init__(self,initial_vars_dict,label,min,max,step,suffix,varname=''):
         center = QtCore.Qt.AlignCenter
+        Vcenter = QtCore.Qt.AlignVCenter
         right = QtCore.Qt.AlignRight
+        button_width = 35
+        spin_width = 70
         self.label = QtGui.QLabel(label)
-        self.label.setAlignment(right)
+        self.label.setAlignment(right|Vcenter)
         self.leftVar = varname+'_left'
         self.rightVar = varname+'_right'
         
@@ -131,11 +134,16 @@ class left_right_vars():
         self.left_spn.setValue(eval(initial_vars_dict[self.leftVar]))
         self.right_spn.setValue(eval(initial_vars_dict[self.rightVar]))
         
+        self.left_spn.setMaximumSize(100,100)
+        self.right_spn.setMaximumSize(100,100)
+
         self.get_btn = QtGui.QPushButton('Get')
+        self.get_btn.setMaximumWidth(button_width)
         self.get_btn.setAutoDefault(False)
         self.get_btn.clicked.connect(self.get)
 
         self.set_btn = QtGui.QPushButton('Set')
+        self.set_btn .setMaximumWidth(button_width)
         self.set_btn.setAutoDefault(False)
         self.set_btn.clicked.connect(self.set)
         
@@ -180,9 +188,12 @@ class left_right_vars():
 class single_var():
     def __init__(self,init_var_dict,label,min,max,step,suffix,varname=''):
         center = QtCore.Qt.AlignCenter
+        Vcenter = QtCore.Qt.AlignVCenter
         right = QtCore.Qt.AlignRight
+        button_width = 35
+        spin_width = 80
         self.label = QtGui.QLabel(label)
-        self.label.setAlignment(right)
+        self.label.setAlignment(right|Vcenter)
         # self.label.setToolTip(helpText)
         self.varname = varname
 
@@ -196,12 +207,15 @@ class single_var():
         self.spn.setSingleStep(step)
         self.spn.setSuffix(suffix)
         self.spn.setAlignment(center)
+        self.spn.setMaximumWidth(spin_width)
 
         self.get_btn = QtGui.QPushButton('Get')
+        self.get_btn.setMaximumWidth(button_width)
         self.get_btn.setAutoDefault(False)
         self.get_btn.clicked.connect(self.get)
 
         self.set_btn = QtGui.QPushButton('Set')
+        self.set_btn.setMaximumWidth(button_width)
         self.set_btn.setAutoDefault(False)
         self.set_btn.clicked.connect(self.set)
         # self.spn.editingFinished.connect(self.set)
