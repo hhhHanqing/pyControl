@@ -94,11 +94,11 @@ class Run_experiment_tab(QtGui.QWidget):
             self.subjectboxes.append(
                 Subjectbox('{} ---- {}'.format(key,setup_subject_pairs[key]), i, self))
             position = int(key.split('.')[-1])-1
-            if position<5:
+            if position<3:
                 row = 0
             else:
                 row = 1
-            self.boxes_layout.addWidget(self.subjectboxes[-1],row,position-5*row)
+            self.boxes_layout.addWidget(self.subjectboxes[-1],row,position-3*row)
         # Create data folder if needed.
         if not os.path.exists(self.experiment['data_dir']):
             os.mkdir(self.experiment['data_dir'])        
