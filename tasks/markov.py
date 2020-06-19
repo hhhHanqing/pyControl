@@ -1,7 +1,7 @@
 from pyControl.utility import *
 import hardware_definition as hw
 
-version = 2020061601 ## YearMonthDayRevision YYYYMMDDrr  can have up to 100 revisions/day
+version = 2020061901 ## YearMonthDayRevision YYYYMMDDrr  can have up to 100 revisions/day
 
 states= [
     'waiting_for_initiation_center',
@@ -185,7 +185,7 @@ def all_states(event):
         print("---------------Speaker Volume is now {}---------------".format(v.speaker_volume))
     Lmsg = hw.Lpump.check_for_serial()
     if Lmsg:
-        print("Stoping task. Left pump empty")
+        print("Stopping task. Left pump empty")
         stop_framework()
     Rmsg = hw.Rpump.check_for_serial()
     if Rmsg:
