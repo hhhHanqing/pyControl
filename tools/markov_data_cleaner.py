@@ -1,12 +1,12 @@
 import tools.data_import as di
 import pandas as pd
 import os
-from config.paths import network_dir
-cleaner_version = 2019121700 ## YearMonthDayRevision YYYYMMDDrr  can have up to 100 revisions/day
+from config.paths import dirs
+cleaner_version = 2020061901 ## YearMonthDayRevision YYYYMMDDrr  can have up to 100 revisions/day
 class Log_cleaner():
     def __init__(self,file_path):
         self.txt_file = file_path
-        self.folder_path = network_dir 
+        self.folder_path = dirs['network_dir'] 
 
         session = di.Session(self.txt_file)
         self.session = session
