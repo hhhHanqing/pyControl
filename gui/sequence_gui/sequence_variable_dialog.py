@@ -67,9 +67,12 @@ class Sequence_GUI(QtGui.QWidget):
         self.other_layout = QtGui.QGridLayout()
         self.reward_seq = text_var(init_vars,'<b>Reward Sequence</b>','reward_seq')
         self.reward_vol = spin_var(init_vars,'<b>Reward Volume</b>', 1,500,25,' µL','reward_volume')
+        self.correct_rate = spin_var(init_vars,'<b>Correct Reward Rate</b>',0,1,.05,'','correct_reward_rate')
         self.background_rate = spin_var(init_vars,'<b>Background Reward Rate</b>',0,1,.05,'','background_reward_rate')
+        self.side_delay = spin_var(init_vars,'<b>Side Delay</b>',0,10000,100,' ms','time_side_delay')
+        self.blink_delay = spin_var(init_vars,'<b>Blink Delay</b>',50,200,10,' ms','time_blink')
         # place widgets
-        for i,var in enumerate([self.reward_seq,self.reward_vol,self.background_rate]):
+        for i,var in enumerate([self.reward_seq,self.reward_vol,self.correct_rate,self.background_rate,self.side_delay,self.blink_delay]):
             var.setBoard(board)
             var.add_to_grid(self.other_layout,i+1)
         self.other_box.setLayout(self.other_layout)

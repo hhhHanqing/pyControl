@@ -1,26 +1,32 @@
-
 from pyControl.utility import *
 import hardware_definition as hw
 
 states= [
     'wait_for_center',
-    'wait_for_choice'
+    'wait_for_choice',
+    'wait_for_outcome'
     ]
 
 events = [
     'R_nose',
     'C_nose',
     'L_nose',
-    'blink_toggle'
+    'center_hold_timer',
+    'blink_timer',
+    'side_delay_timer'
     ]
 
 ####### Hidden script variables ##########
 v.trial_current_number___ = 0
+v.chosen_side___ = ''
+v.abandoned___ = False
 ##### Configurable Variables #######
+v.correct_reward_rate = 0.9
 v.background_reward_rate = .1
 v.reward_seq = 'LLR'
 v.reward_volume = 250 # microliters
 v.time_blink = 100
+v.time_side_delay = 2500 # seconds
 
 #Other variables
 v.current_sequence = '______' # up to 6 letter sequence
@@ -31,23 +37,45 @@ def wait_for_center(event):
         hw.Cpoke.LED.on()
         hw.Rpoke.LED.off()
         hw.Lpoke.LED.off()
-        v.trial_current_number___ += 1
-        set_timer('blink_toggle', v.time_blink)
     elif event == 'C_nose':
         goto_state('wait_for_choice')
-    elif event == 'blink_toggle':
-        hw.Cpoke.LED.toggle()
-        set_timer('blink_toggle', v.time_blink)
 
 def wait_for_choice(event):
     if event == 'entry':
         hw.Cpoke.LED.off()
         hw.Rpoke.LED.on()
         hw.Lpoke.LED.on()
+        v.trial_current_number___ += 1
     elif event == 'R_nose':
-        decideReward('R')
+        getOutcome('R')
     elif event == 'L_nose':
-        decideReward('L')
+        getOutcome('L')
+
+def wait_for_outcome(event):
+    if event == 'entry':
+        v.abandoned___ = False
+        set_timer('blink_timer', v.time_blink)
+        set_timer('side_delay_timer', v.time_side_delay, output_event=True)
+    elif event == 'blink_timer':
+        if v.chosen_side___ == 'L' :
+            hw.Lpoke.LED.toggle()
+        else:
+            hw.Rpoke.LED.toggle()
+        set_timer('blink_timer', v.time_blink)
+    elif event == 'side_delay_timer':
+        if v.outcome___ != 'N':
+            if withprob(v.correct_reward_rate):
+                giveReward(v.chosen_side___)
+            else:
+                print('\t\tBAD LUCK')
+        goto_state('wait_for_center')
+    elif event == 'C_nose':
+        v.abandoned___ = True
+        goto_state('wait_for_choice')
+    elif event == 'exit':
+        disarm_timer('blink_timer')
+        disarm_timer('side_delay_timer')
+        print('rslt,{},{},{},{},{},{}'.format(v.trial_current_number___,v.reward_seq,v.background_reward_rate,v.chosen_side___,v.outcome___,v.abandoned___))
 
 def all_states(event):
     Lmsg = hw.Lpump.check_for_serial()
@@ -60,20 +88,26 @@ def all_states(event):
         stop_framework()
 
 ################ helper functions ############
-def decideReward(choice):
+def getOutcome(choice):
     v.current_sequence = v.current_sequence[1:] + choice
-    outcome = 'N' # not rewarded
+    v.chosen_side___ = choice
     if str(v.current_sequence[-len(v.reward_seq):]) == str(v.reward_seq):
-        giveReward(choice)  
-        outcome = 'S' #reward from correct sequence
+        v.outcome___ = 'S' #reward from correct sequence
     elif withprob(v.background_reward_rate):
-        giveReward(choice)
-        outcome = 'B' # reward from background
-    print('rslt,{},{},{},{},{}'.format(v.trial_current_number___,v.reward_seq,v.background_reward_rate,choice,outcome))
-    goto_state('wait_for_center')
+        v.outcome___ = 'B' # reward from background
+    else:
+        v.outcome___ = 'N' # not rewarded
+    if v.chosen_side___ =='L':
+        hw.Rpoke.LED.off()
+    else:
+        hw.Lpoke.LED.off()
+    hw.Cpoke.LED.on()
+    goto_state('wait_for_outcome')
 
 def giveReward(side):
     if side =='R':
         hw.Rpump.infuse(v.reward_volume)
+        print('\t\tRIGHT REWARD')
     else:
         hw.Lpump.infuse(v.reward_volume)
+        print('\t\tLEFT REWARD')
