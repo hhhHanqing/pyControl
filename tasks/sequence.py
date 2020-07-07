@@ -9,9 +9,10 @@ states= [
 
 events = [
     'R_nose',
-    'C_nose',
+    'C_nose','C_nose_out',
     'L_nose',
     'center_hold_timer',
+    'forgive_timer',
     'blink_timer',
     'side_delay_timer'
     ]
@@ -20,13 +21,16 @@ events = [
 v.trial_current_number___ = 0
 v.chosen_side___ = ''
 v.abandoned___ = False
+v.in_center___ = False
 ##### Configurable Variables #######
 v.correct_reward_rate = 0.9
 v.background_reward_rate = .1
 v.reward_seq = 'LLR'
 v.reward_volume = 250 # microliters
-v.time_blink = 100
-v.time_side_delay = 2500 # seconds
+v.time_blink = 100 # milliseconds
+v.time_side_delay = 500 # milliseconds
+v.time_hold_center = 1500 # milliseconds 
+v.time_forgive = 500
 
 #Other variables
 v.current_sequence = '______' # up to 6 letter sequence
@@ -38,7 +42,19 @@ def wait_for_center(event):
         hw.Rpoke.LED.off()
         hw.Lpoke.LED.off()
     elif event == 'C_nose':
-        goto_state('wait_for_choice')
+        v.in_center___ = True
+        if timer_remaining('center_hold_timer') == 0: # the timer doesn't exist
+            set_timer('center_hold_timer',v.time_hold_center, output_event=True)
+        else:
+            disarm_timer('forgive_timer')
+    elif event == 'C_nose_out':
+        v.in_center___ = False
+        set_timer('forgive_timer',v.time_forgive,output_event=True)
+    elif event == 'forgive_timer':
+        disarm_timer('center_hold_timer')
+    elif event == 'center_hold_timer':
+        if v.in_center___:
+            goto_state('wait_for_choice')
 
 def wait_for_choice(event):
     if event == 'entry':
