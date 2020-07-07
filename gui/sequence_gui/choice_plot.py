@@ -63,18 +63,18 @@ class Choice_plot():
             n_new = len(outcome_msgs)
             self.data = np.roll(self.data, -n_new, axis=0)
             for i, ne in enumerate(outcome_msgs):
-                trial_num_string,self.reward_seq,background_reward_str,choice,outcome= ne[-1].split(',')[1:]
+                trial_num_string,self.reward_seq,background_reward_str,choice,outcome,abandoned= ne[-1].split(',')[1:]
                 self.background_reward = float(background_reward_str)
                 self.trial_num = int(trial_num_string)
                 if choice == 'L':
                     if self.last_choice == 'L':
-                        self.consecutive_adjustment += .1
+                        self.consecutive_adjustment += .2
                     else:
                         self.consecutive_adjustment = 0
                     side = 7 + self.consecutive_adjustment
                 elif choice == 'R':
                     if self.last_choice == 'R':
-                        self.consecutive_adjustment += .1
+                        self.consecutive_adjustment += .2
                     else:
                         self.consecutive_adjustment = 0
                     side = 6 - self.consecutive_adjustment
@@ -84,20 +84,26 @@ class Choice_plot():
 
                 if outcome == 'S': # was rewarded
                     color = 0
-                    symbol = 0
                 elif outcome == 'N': # was not rewarded
                     color = 1
-                    symbol = 0
                 elif outcome == 'B': # background reward
                     color = 2
+
+                if abandoned == 'True':
                     symbol = 0
+                else:
+                    symbol = 2
             
                 self.data[-n_new+i,0] = self.trial_num
                 self.data[-n_new+i,1] = side
                 self.data[-n_new+i,2] = color
                 self.data[-n_new+i,3] = symbol
  
-            self.plot.setData(self.data[:,0],self.data[:,1],symbol=[self.my_symbols[int(ID)] for ID in self.data[:,3]],symbolSize=10,symbolPen=[pg.mkPen('y') if symbol == 1 else pg.mkPen('w') for symbol in self.data[:,3]],symbolBrush=[self.my_colors[int(ID)] for ID in self.data[:,2]])
+            self.plot.setData(self.data[:,0],self.data[:,1],
+            symbol=[self.my_symbols[int(ID)] for ID in self.data[:,3]],
+            symbolSize=10,
+            symbolPen=[pg.mkPen(color=(150,150,150),width=1) if symbol == 2 else pg.mkPen('w',width=1) for symbol in self.data[:,3]],
+            symbolBrush=[self.my_colors[int(ID)] for ID in self.data[:,2]])
             self.update_title()
             if self.do_update:
                 self.axis.setRange(xRange=[self.trial_num-markov_plot_window,self.trial_num+5], padding=0)
