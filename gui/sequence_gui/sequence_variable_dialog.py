@@ -61,26 +61,114 @@ class Sequence_GUI(QtGui.QWidget):
 
         center = QtCore.Qt.AlignCenter
 
-        ###### Other Variables Group #######
-        # create widgets 
-        self.other_box = QtGui.QGroupBox('Variables')
-        self.other_layout = QtGui.QGridLayout()
+        ############## Reward Variables ##############
+        self.reward_group = QtGui.QGroupBox('Reward Variables')
+        self.reward_layout = QtGui.QGridLayout()
+        # create widgets
         self.reward_seq = text_var(init_vars,'<b>Reward Sequence</b>','reward_seq')
-        self.reward_vol = spin_var(init_vars,'<b>Reward Volume</b>', 1,500,25,' µL','reward_volume')
-        self.correct_rate = spin_var(init_vars,'<b>Correct Reward Rate</b>',0,1,.05,'','correct_reward_rate')
-        self.background_rate = spin_var(init_vars,'<b>Background Reward Rate</b>',0,1,.05,'','background_reward_rate')
-        self.side_delay = spin_var(init_vars,'<b>Side Delay</b>',0,10000,100,' ms','time_side_delay')
-        self.blink_delay = spin_var(init_vars,'<b>Blink Delay</b>',50,200,10,' ms','time_blink')
+        self.reward_vol = spin_var(init_vars,'💧<b>Reward Volume</b>', 1,500,25,' µL','reward_volume')
+        self.correct_rate = spin_var(init_vars,'✅<b>Correct Reward Rate</b>',0,1,.05,'','correct_reward_rate')
+        self.background_rate = spin_var(init_vars,'🎲<b>Background Reward Rate</b>',0,1,.05,'','background_reward_rate')
         # place widgets
-        for i,var in enumerate([self.reward_seq,self.reward_vol,self.correct_rate,self.background_rate,self.side_delay,self.blink_delay]):
+        for i,var in enumerate([self.reward_seq,self.reward_vol,self.correct_rate,self.background_rate]):
             var.setBoard(board)
-            var.add_to_grid(self.other_layout,i+1)
-        self.other_box.setLayout(self.other_layout)
+            var.add_to_grid(self.reward_layout,i)
+        self.reward_group.setLayout(self.reward_layout)
 
-        grid_layout.addWidget(self.other_box,1,0,1,3)
+        ############## Center Variables ##############
+        self.center_group = QtGui.QGroupBox('Center Variables')
+        self.center_layout = QtGui.QGridLayout()
+        
+        self.center_hold_label = QtGui.QLabel('<b>Center Hold</b>')
+        self.center_hold_label.setAlignment(QtCore.Qt.AlignRight)
+
+        center_constant = eval(init_vars['center_hold_constant'])
+        self.constant_center_radio = QtGui.QRadioButton('Constant')
+        self.ramp_center_radio = QtGui.QRadioButton('Ramp Up')
+        self.constant_center_radio.setChecked(center_constant)
+        self.ramp_center_radio.setChecked(not center_constant)
+
+        self.center_layout.addWidget(self.center_hold_label,0,0)
+        self.center_layout.addWidget(self.constant_center_radio,0,1)
+        self.center_layout.addWidget(self.ramp_center_radio,0,2,1,2)
+
+        # create widgets
+        self.forgive_window = spin_var(init_vars,'<b>Forgive Window</b>',1,1000,1,' ms','time_forgive')
+        self.center_delay = spin_var(init_vars,'<b>Duration</b>',0,10000,100,' ms','time_hold_center')
+        self.hold_start = spin_var(init_vars,'<b>Start</b>',1,5000,10,' ms','center_hold_start')
+        self.hold_increment = spin_var(init_vars,'<b>Increment</b>',1,500,1,' ms','center_hold_increment')
+        self.hold_max = spin_var(init_vars,'<b>Max</b>',1,10000,10,' ms','center_hold_max')
+        # place widgets
+        for i,var in enumerate([self.center_delay,self.hold_start,self.hold_increment,self.hold_max,self.forgive_window]):
+            var.setBoard(board)
+            var.add_to_grid(self.center_layout,i+1)
+
+        self.center_group.setLayout(self.center_layout)
+        self.show_center_options()
+        
+        ############## Side Variables ##############
+        self.side_group = QtGui.QGroupBox('Side Variables')
+        self.side_layout = QtGui.QGridLayout()
+
+
+        self.side_delay_label = QtGui.QLabel('<b>Side Delay</b>')
+        self.side_delay_label.setAlignment(QtCore.Qt.AlignRight)
+
+        side_constant = eval(init_vars['side_delay_constant'])
+        self.constant_side_radio = QtGui.QRadioButton('Constant')
+        self.ramp_side_radio = QtGui.QRadioButton('Ramp Up')
+        self.constant_side_radio.setChecked(side_constant)
+        self.ramp_side_radio.setChecked(not side_constant)
+
+        self.side_layout.addWidget(self.side_delay_label,0,0)
+        self.side_layout.addWidget(self.constant_side_radio,0,1)
+        self.side_layout.addWidget(self.ramp_side_radio,0,2,1,2)
+        # create widgets
+        self.blink_delay = spin_var(init_vars,'<b>Blink Delay</b>',50,200,10,' ms','time_blink')
+        self.side_delay = spin_var(init_vars,'<b>Duration</b>',0,10000,100,' ms','time_side_delay')
+        self.side_start = spin_var(init_vars,'<b>Start</b>',1,5000,10,' ms','side_delay_start')
+        self.side_increment = spin_var(init_vars,'<b>Increment</b>',1,500,1,' ms','side_delay_increment')
+        self.side_max = spin_var(init_vars,'<b>Max</b>',1,10000,10,' ms','side_delay_max')
+        # place widgets
+        for i,var in enumerate([self.side_delay,self.side_start,self.side_increment,self.side_max,self.blink_delay]):
+            var.setBoard(board)
+            var.add_to_grid(self.side_layout,i+1)
+        self.side_group.setLayout(self.side_layout)
+        self.show_side_options()
+
+        ###### Place groups into layout ############
+        grid_layout.addWidget(self.reward_group,0,0,1,3)
+        grid_layout.addWidget(self.center_group,1,0,1,2)
+        grid_layout.addWidget(self.side_group,2,0,1,1)
         grid_layout.setColumnStretch(9,1)
         grid_layout.setRowStretch(10,1)
 
+        self.constant_center_radio.clicked.connect(self.update_center)
+        self.ramp_center_radio.clicked.connect(self.update_center)
+        self.constant_side_radio.clicked.connect(self.update_side)
+        self.ramp_side_radio.clicked.connect(self.update_side)
+
+    def update_center(self):
+        self.show_center_options()
+        if self.board.framework_running: # Value returned later.
+            self.board.set_variable('center_hold_constant',self.constant_center_radio.isChecked())
+
+    def show_center_options(self):
+        self.center_delay.setVisible(self.constant_center_radio.isChecked())
+        self.hold_start.setVisible(not self.constant_center_radio.isChecked())
+        self.hold_increment.setVisible(not self.constant_center_radio.isChecked())
+        self.hold_max.setVisible(not self.constant_center_radio.isChecked())
+
+    def update_side(self):
+        self.show_side_options()
+        if self.board.framework_running: # Value returned later.
+            self.board.set_variable('side_delay_constant',self.constant_side_radio.isChecked())
+
+    def show_side_options(self):
+        self.side_delay.setVisible(self.constant_side_radio.isChecked())
+        self.side_start.setVisible(not self.constant_side_radio.isChecked())
+        self.side_increment.setVisible(not self.constant_side_radio.isChecked())
+        self.side_max.setVisible(not self.constant_side_radio.isChecked())
 class spin_var():
     def __init__(self,init_var_dict,label,min,max,step,suffix,varname=''):
         center = QtCore.Qt.AlignCenter
@@ -148,6 +236,12 @@ class spin_var():
         '''Reload value from sm_info.  sm_info is updated when variables are output
         during framework run due to get/set.'''
         self.spn.setValue(eval(str(self.board.sm_info['variables'][self.varname])))
+
+    def setVisible(self,makeVisible):
+        self.label.setVisible(makeVisible)
+        self.spn.setVisible(makeVisible)
+        self.get_btn.setVisible(makeVisible)
+        self.set_btn.setVisible(makeVisible)
 
 class text_var():
     def __init__(self,init_var_dict,label,varname=''):
