@@ -14,7 +14,8 @@ events = [
     'center_hold_timer',
     'forgive_timer',
     'blink_timer',
-    'side_delay_timer'
+    'side_delay_timer',
+    'button',
     ]
 
 ####### Hidden script variables ##########
@@ -24,15 +25,21 @@ v.abandoned___ = False
 v.in_center___ = False
 v.hold_center___ = 0
 v.side_delay___ = 0
+v.sequence_index___ = -1
 ##### Configurable Variables #######
-### Reward variables
+
+### Sequence Variables
+v.sequence_array_text = "LLR-RRL-RRLRR-LLL"
+
+### Reward Variables
 v.reward_seq = 'LLR'
+v.block_change_trial = 0
 v.correct_reward_rate = 0.9
 v.background_reward_rate = .1
 v.reward_volume = 250 # microliters
 
 ### Center Variables
-v.time_hold_center = 1000 # milliseconds 
+v.time_hold_center = 100 # milliseconds 
 v.time_forgive = 500
 v.center_hold_constant = True
 v.center_hold_start = 500
@@ -41,7 +48,7 @@ v.center_hold_max = 5000
 
 ### Side Variables
 v.time_blink = 100 # milliseconds
-v.time_side_delay = 1000 # milliseconds
+v.time_side_delay = 500 # milliseconds
 v.side_delay_constant = True
 v.side_delay_start = 500
 v.side_delay_increment = 1
@@ -50,6 +57,11 @@ v.side_delay_max = 8000
 #Other variables
 v.current_sequence = '______' # up to 6 letter sequence
 initial_state = 'wait_for_center'
+
+def run_start():
+    start_new_block()
+    # assign bout lengths
+    # start_new_block()
 
 def wait_for_center(event):
     if event == 'entry':
@@ -77,6 +89,8 @@ def wait_for_choice(event):
         hw.Rpoke.LED.on()
         hw.Lpoke.LED.on()
         v.trial_current_number___ += 1
+        if v.trial_current_number___ >= v.block_change_trial:
+            start_new_block()
     elif event == 'R_nose':
         getOutcome('R')
     elif event == 'L_nose':
@@ -119,8 +133,25 @@ def all_states(event):
     if Rmsg:
         print("Stopping task. Right pump empty")
         stop_framework()
+    elif event == 'button':
+        start_new_block()
 
 ################ helper functions ############
+def start_new_block ():
+    v.sequence_index___+=1
+    sequence_array = v.sequence_array_text.upper().split('-')
+    
+    if v.sequence_index___ == len(sequence_array): # loop around to the start if we're at the end of the sequence array
+        v.sequence_index___ = 0
+
+    v.reward_seq = sequence_array[v.sequence_index___]
+    # get next sequence from array
+    # set new block_change_trial
+    v.block_change_trial = v.trial_current_number___ + int(gauss_rand(20,2))
+    # update sequence count
+    # if new lap, update lap count
+    print('NB,{},{}'.format(v.reward_seq,v.block_change_trial))
+
 def getOutcome(choice):
     v.current_sequence = v.current_sequence[1:] + choice
     v.chosen_side___ = choice
@@ -159,7 +190,7 @@ def updateHold():
 
 def updateSide():
     if v.side_delay_constant:
-        v.side_delay___ = v.time_hold_center
+        v.side_delay___ = v.time_side_delay
     else:
         v.side_delay___ = min(v.side_delay_start + v.trial_current_number___ * v.side_delay_increment, v.side_delay_max )
     print(v.side_delay___)

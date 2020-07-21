@@ -61,6 +61,17 @@ class Sequence_GUI(QtGui.QWidget):
 
         center = QtCore.Qt.AlignCenter
 
+        ##############  Sequence Scheduler ##############
+        self.sequence_group = QtGui.QGroupBox('Sequence Scheduler')
+        self.sequence_layout = QtGui.QGridLayout()
+        # create widgets
+        self.reward_array = text_var(init_vars,'<b>Sequence Array</b>','sequence_array_text',text_edit_width=400)
+        # place widgets
+        for i,var in enumerate([self.reward_array]):
+            var.setBoard(board)
+            var.add_to_grid(self.sequence_layout,i)
+        self.sequence_group.setLayout(self.sequence_layout)
+
         ############## Reward Variables ##############
         self.reward_group = QtGui.QGroupBox('Reward Variables')
         self.reward_layout = QtGui.QGridLayout()
@@ -137,9 +148,10 @@ class Sequence_GUI(QtGui.QWidget):
         self.show_side_options()
 
         ###### Place groups into layout ############
-        grid_layout.addWidget(self.reward_group,0,0,1,3)
-        grid_layout.addWidget(self.center_group,1,0,1,2)
-        grid_layout.addWidget(self.side_group,2,0,1,1)
+        grid_layout.addWidget(self.sequence_group,0,0,1,3)
+        grid_layout.addWidget(self.reward_group,1,0,1,3)
+        grid_layout.addWidget(self.center_group,2,0,1,2)
+        grid_layout.addWidget(self.side_group,3,0,1,1)
         grid_layout.setColumnStretch(9,1)
         grid_layout.setRowStretch(10,1)
 
@@ -154,10 +166,10 @@ class Sequence_GUI(QtGui.QWidget):
             self.board.set_variable('center_hold_constant',self.constant_center_radio.isChecked())
 
     def show_center_options(self):
-        self.center_delay.setVisible(self.constant_center_radio.isChecked())
-        self.hold_start.setVisible(not self.constant_center_radio.isChecked())
-        self.hold_increment.setVisible(not self.constant_center_radio.isChecked())
-        self.hold_max.setVisible(not self.constant_center_radio.isChecked())
+        self.center_delay.setEnabled(self.constant_center_radio.isChecked())
+        self.hold_start.setEnabled(not self.constant_center_radio.isChecked())
+        self.hold_increment.setEnabled(not self.constant_center_radio.isChecked())
+        self.hold_max.setEnabled(not self.constant_center_radio.isChecked())
 
     def update_side(self):
         self.show_side_options()
@@ -165,10 +177,10 @@ class Sequence_GUI(QtGui.QWidget):
             self.board.set_variable('side_delay_constant',self.constant_side_radio.isChecked())
 
     def show_side_options(self):
-        self.side_delay.setVisible(self.constant_side_radio.isChecked())
-        self.side_start.setVisible(not self.constant_side_radio.isChecked())
-        self.side_increment.setVisible(not self.constant_side_radio.isChecked())
-        self.side_max.setVisible(not self.constant_side_radio.isChecked())
+        self.side_delay.setEnabled(self.constant_side_radio.isChecked())
+        self.side_start.setEnabled(not self.constant_side_radio.isChecked())
+        self.side_increment.setEnabled(not self.constant_side_radio.isChecked())
+        self.side_max.setEnabled(not self.constant_side_radio.isChecked())
 class spin_var():
     def __init__(self,init_var_dict,label,min,max,step,suffix,varname=''):
         center = QtCore.Qt.AlignCenter
@@ -244,12 +256,12 @@ class spin_var():
         self.set_btn.setVisible(makeVisible)
 
 class text_var():
-    def __init__(self,init_var_dict,label,varname=''):
+    def __init__(self,init_var_dict,label,varname='',text_edit_width=80):
         center = QtCore.Qt.AlignCenter
         Vcenter = QtCore.Qt.AlignVCenter
         right = QtCore.Qt.AlignRight
         button_width = 35
-        text_edit_width = 80
+        text_edit_width = text_edit_width
         self.label = QtGui.QLabel(label)
         self.label.setAlignment(right|Vcenter)
         # self.label.setToolTip(helpText)
