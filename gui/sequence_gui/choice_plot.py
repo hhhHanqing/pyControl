@@ -9,7 +9,7 @@ class Choice_plot():
         self.axis = pg.PlotWidget(title='Sequence Plot')
         self.axis.hideAxis('right')
         self.axis.showAxis('left')
-        self.axis.setRange(xRange=[-1,markov_plot_window+5], padding=0)
+        self.axis.setRange(xRange=[-1,markov_plot_window+10], padding=0)
         self.axis.setMouseEnabled(x=True,y=False)
         self.axis.showGrid(x=True,alpha=0.75)
         self.axis.setLimits(xMin=-1)
@@ -25,8 +25,11 @@ class Choice_plot():
         self.left_prob  = None
         self.right_prob = None
         self.next_block_start = 0
-        self.last_arrow = None
+        # self.new_bout_arrow = pg.ArrowItem(pos=(0,7.85),angle=-90,brush='#FF1FE6',pen='#FF1FE6',headLen=18)
+        self.new_bout_line = pg.InfiniteLine(angle=90,pen='#FF1FE6')
+        self.bout_text = pg.TextItem("testing", anchor=(1, .5))
         self.last_choice = ''
+
         
     def set_state_machine(self,sm_info):
         self.is_markov_task = sm_info['name'] == 'sequence'
@@ -46,10 +49,12 @@ class Choice_plot():
         self.plot.clear()
         self.plot2.clear()
         self.plot3.clear()
-        self.axis.removeItem(self.last_arrow)
-        self.trial_num = -1
+        self.trial_num = 0
         self.axis.setTitle('Choices and Outcomes')
         self.axis.getAxis('left').setTicks([[(7,'Left'),(6,'Right')]])
+        # self.axis.addItem(self.new_bout_arrow)
+        self.axis.addItem(self.bout_text)
+        self.axis.addItem(self.new_bout_line)
         self.data = np.zeros([self.data_len,6])
 
     def process_data(self, new_data):
@@ -57,7 +62,6 @@ class Choice_plot():
         '''Store new data from board.'''
         outcome_msgs = [nd for nd in new_data if nd[0] == 'P' and nd[2].split(',')[0]=='rslt'] 
         new_block_msgs = [nd for nd in new_data if nd[0] == 'P' and nd[2].split(',')[0]=='NB']
-        probability_var_update_msgs = [nd for nd in new_data if nd[0] == 'V' and nd[2].split(' ')[0].find('reward_probability')>-1] 
         newBlock_var_update_msgs = [nd for nd in new_data if nd[0] == 'V' and nd[2].split(' ')[0].find('trial_new_block')>-1] 
         if outcome_msgs:
             n_new = len(outcome_msgs)
@@ -111,24 +115,23 @@ class Choice_plot():
             for nb_msg in new_block_msgs:
                 content = nb_msg[2].split(',')
                 self.next_block_start = int(content[2])
-                if self.trial_num>0: # remove old marker and place marker where probability change actually occured. This takes into account instances where the new bout was scheduled for a trial that already occured.
-                    self.axis.removeItem(self.last_arrow)
-                    self.update_block_marker(self.trial_num+1)
-                self.update_block_marker(self.next_block_start)
-                self.update_title()
-        if probability_var_update_msgs:
-            for prob_update in probability_var_update_msgs:
-                content = prob_update[2].split(' ')
-                if content[0].find('right') > -1:
-                    self.right_prob = content[1]
-                elif content[0].find('left') > -1:
-                    self.left_prob = content[1]
-                self.update_title()
+                # if self.trial_num>0: # remove old marker and place marker where probability change actually occured. This takes into account instances where the new bout was scheduled for a trial that already occured.
+                #     self.axis.removeItem(self.new_bout_arrow)
+                #     self.update_block_marker(self.trial_num+1)
+                # self.update_block_marker(self.next_block_start)
+                # self.new_bout_arrow.setPos(self.next_block_start,4.85)
+                self.new_bout_line.setValue(self.next_block_start)
+                self.bout_text.setPos(self.next_block_start, 6.5)
+                self.bout_text.setText("hi{}".format(self.next_block_start))
         if newBlock_var_update_msgs:
             for block_start_update in newBlock_var_update_msgs:
                 content = block_start_update[2].split(' ')
                 self.next_block_start = int(content[1])
-                self.update_block_marker(self.next_block_start)
+                # self.update_block_marker(self.next_block_start)
+                # self.new_bout_arrow.setPos(self.next_block_start,4.85)
+                self.new_bout_line.setValue(self.next_block_start)
+                self.bout_text.setPos(self.next_block_start, 6.5)
+        if newBlock_var_update_msgs:
                 self.update_title()
 
     def toggle_update(self):
@@ -141,7 +144,8 @@ class Choice_plot():
             self.trial_num,self.reward_seq,self.background_reward))
 
     def update_block_marker(self,xpos):
-        self.axis.removeItem(self.last_arrow)
-        self.last_arrow = pg.ArrowItem(pos=(xpos,4.85),angle=-90,brush='#FF1FE6',pen='#FF1FE6',headLen=18)
-        self.axis.addItem(self.last_arrow)
+        # self.axis.removeItem(self.new_bout_arrow)
+        # self.new_bout_arrow = pg.ArrowItem(pos=(xpos,4.85),angle=-90,brush='#FF1FE6',pen='#FF1FE6',headLen=18)
+        # self.axis.addItem(self.new_bout_arrow)
+        pass
     
