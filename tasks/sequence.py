@@ -28,11 +28,14 @@ v.side_delay___ = 0
 v.sequence_index___ = -1
 ##### Configurable Variables #######
 
-### Sequence Variables
+### Bout Variables
 v.sequence_array_text = "LLR-RRL-RRLRR-LLL"
+v.bout_mean = 10
+v.bout_sd = 4
+v.trials_until_change = 0
 
 ### Reward Variables
-v.reward_seq = 'LLR'
+v.reward_seq___ = 'LLR'
 v.block_change_trial = 0
 v.correct_reward_rate = 0.9
 v.background_reward_rate = .1
@@ -89,8 +92,6 @@ def wait_for_choice(event):
         hw.Rpoke.LED.on()
         hw.Lpoke.LED.on()
         v.trial_current_number___ += 1
-        if v.trial_current_number___ >= v.block_change_trial:
-            start_new_block()
     elif event == 'R_nose':
         getOutcome('R')
     elif event == 'L_nose':
@@ -122,7 +123,10 @@ def wait_for_outcome(event):
     elif event == 'exit':
         disarm_timer('blink_timer')
         disarm_timer('side_delay_timer')
-        print('rslt,{},{},{},{},{},{}'.format(v.trial_current_number___,v.reward_seq,v.background_reward_rate,v.chosen_side___,v.outcome___,v.abandoned___))
+        print('rslt,{},{},{},{},{},{}'.format(v.trial_current_number___,v.reward_seq___,v.background_reward_rate,v.chosen_side___,v.outcome___,v.abandoned___))
+        v.trials_until_change += -1
+        if v.trials_until_change<=0:
+            start_new_block()
 
 def all_states(event):
     Lmsg = hw.Lpump.check_for_serial()
@@ -144,13 +148,13 @@ def start_new_block ():
     if v.sequence_index___ == len(sequence_array): # loop around to the start if we're at the end of the sequence array
         v.sequence_index___ = 0
 
-    v.reward_seq = sequence_array[v.sequence_index___]
+    v.reward_seq___ = sequence_array[v.sequence_index___]
     # get next sequence from array
     # set new block_change_trial
-    v.block_change_trial = v.trial_current_number___ + int(gauss_rand(20,2))
+    v.trials_until_change =  int(gauss_rand(v.bout_mean,v.bout_sd))
     # update sequence count
     # if new lap, update lap count
-    print('NB,{},{}'.format(v.reward_seq,v.block_change_trial))
+    print('NB,{},{}'.format(v.reward_seq___,v.trials_until_change))
 
 def getOutcome(choice):
     v.current_sequence = v.current_sequence[1:] + choice
@@ -160,7 +164,7 @@ def getOutcome(choice):
     updateSide()
 
     ## set outcome variable
-    if str(v.current_sequence[-len(v.reward_seq):]) == str(v.reward_seq):
+    if str(v.current_sequence[-len(v.reward_seq___):]) == str(v.reward_seq___):
         v.outcome___ = 'S' #reward from correct sequence
     elif withprob(v.background_reward_rate):
         v.outcome___ = 'B' # reward from background

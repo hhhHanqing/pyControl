@@ -62,12 +62,15 @@ class Sequence_GUI(QtGui.QWidget):
         center = QtCore.Qt.AlignCenter
 
         ##############  Sequence Scheduler ##############
-        self.sequence_group = QtGui.QGroupBox('Sequence Scheduler')
+        self.sequence_group = QtGui.QGroupBox('Bout Variables')
         self.sequence_layout = QtGui.QGridLayout()
         # create widgets
-        self.reward_array = text_var(init_vars,'<b>Sequence Array</b>','sequence_array_text',text_edit_width=400)
+        self.reward_array = text_var(init_vars,'<b>Sequence Array</b>','sequence_array_text',text_width=150)
+        self.bout_mean = spin_var(init_vars,'<b>Bout distribution µ</b>', 1,500,1,'','bout_mean')
+        self.bout_sd = spin_var(init_vars,'<b>Bout distribution σ</b>', 1,500,1,'','bout_sd')
+        self.next_bout = spin_var(init_vars,'<b>Trials until new bout</b>', 1,500,1,'','trials_until_change')
         # place widgets
-        for i,var in enumerate([self.reward_array]):
+        for i,var in enumerate([self.reward_array,self.bout_mean,self.bout_sd,self.next_bout]):
             var.setBoard(board)
             var.add_to_grid(self.sequence_layout,i)
         self.sequence_group.setLayout(self.sequence_layout)
@@ -76,12 +79,12 @@ class Sequence_GUI(QtGui.QWidget):
         self.reward_group = QtGui.QGroupBox('Reward Variables')
         self.reward_layout = QtGui.QGridLayout()
         # create widgets
-        self.reward_seq = text_var(init_vars,'<b>Reward Sequence</b>','reward_seq')
+        # self.reward_seq = text_var(init_vars,'<b>Reward Sequence</b>','reward_seq')
         self.reward_vol = spin_var(init_vars,'💧<b>Reward Volume</b>', 1,500,25,' µL','reward_volume')
         self.correct_rate = spin_var(init_vars,'✅<b>Correct Reward Rate</b>',0,1,.05,'','correct_reward_rate')
         self.background_rate = spin_var(init_vars,'🎲<b>Background Reward Rate</b>',0,1,.05,'','background_reward_rate')
         # place widgets
-        for i,var in enumerate([self.reward_seq,self.reward_vol,self.correct_rate,self.background_rate]):
+        for i,var in enumerate([self.reward_vol,self.correct_rate,self.background_rate]):
             var.setBoard(board)
             var.add_to_grid(self.reward_layout,i)
         self.reward_group.setLayout(self.reward_layout)
@@ -186,7 +189,7 @@ class spin_var():
         center = QtCore.Qt.AlignCenter
         Vcenter = QtCore.Qt.AlignVCenter
         right = QtCore.Qt.AlignRight
-        button_width = 35
+        button_width = 65
         spin_width = 80
         self.label = QtGui.QLabel(label)
         self.label.setAlignment(right|Vcenter)
@@ -207,11 +210,13 @@ class spin_var():
 
         self.get_btn = QtGui.QPushButton('Get')
         self.get_btn.setMinimumWidth(button_width)
+        self.get_btn.setMaximumWidth(button_width)
         self.get_btn.setAutoDefault(False)
         self.get_btn.clicked.connect(self.get)
 
         self.set_btn = QtGui.QPushButton('Set')
         self.set_btn.setMinimumWidth(button_width)
+        self.set_btn.setMaximumWidth(button_width)
         self.set_btn.setAutoDefault(False)
         self.set_btn.clicked.connect(self.set)
 
@@ -256,12 +261,11 @@ class spin_var():
         self.set_btn.setVisible(makeVisible)
 
 class text_var():
-    def __init__(self,init_var_dict,label,varname='',text_edit_width=80):
+    def __init__(self,init_var_dict,label,varname='',text_width=80):
         center = QtCore.Qt.AlignCenter
         Vcenter = QtCore.Qt.AlignVCenter
         right = QtCore.Qt.AlignRight
-        button_width = 35
-        text_edit_width = text_edit_width
+        button_width = 65
         self.label = QtGui.QLabel(label)
         self.label.setAlignment(right|Vcenter)
         # self.label.setToolTip(helpText)
@@ -269,16 +273,19 @@ class text_var():
 
         self.line_edit = QtGui.QLineEdit()
         self.line_edit.setAlignment(center)
-        self.line_edit.setMaximumWidth(text_edit_width)
+        self.line_edit.setMinimumWidth(text_width)
+        self.line_edit.setMaximumWidth(text_width)
         self.line_edit.setText(eval(init_var_dict[varname]))
 
         self.get_btn = QtGui.QPushButton('Get')
         self.get_btn.setMinimumWidth(button_width)
+        self.get_btn.setMaximumWidth(button_width)
         self.get_btn.setAutoDefault(False)
         self.get_btn.clicked.connect(self.get)
 
         self.set_btn = QtGui.QPushButton('Set')
         self.set_btn.setMinimumWidth(button_width)
+        self.set_btn.setMaximumWidth(button_width)
         self.set_btn.setAutoDefault(False)
         self.set_btn.clicked.connect(self.set)
 

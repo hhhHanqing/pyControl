@@ -20,8 +20,9 @@ class Sequence_Plot():
         self.new_bout_line = pg.InfiniteLine(angle=90,pen='#FF1FE6')
         self.bout_text = pg.TextItem("testing", anchor=(1, .5))
         self.last_choice = ''
+        self.reward_seq = ''
+        self.background_reward = ''
 
-        
     def set_state_machine(self,sm_info):
         if not self.is_active: return
         self.setup_plot_widget()
@@ -58,7 +59,7 @@ class Sequence_Plot():
         '''Store new data from board.'''
         outcome_msgs = [nd for nd in new_data if nd[0] == 'P' and nd[2].split(',')[0]=='rslt'] 
         new_block_msgs = [nd for nd in new_data if nd[0] == 'P' and nd[2].split(',')[0]=='NB']
-        newBlock_var_update_msgs = [nd for nd in new_data if nd[0] == 'V' and nd[2].split(' ')[0].find('trial_new_block')>-1] 
+        newBlock_var_update_msgs = [nd for nd in new_data if nd[0] == 'V' and nd[2].split(' ')[0].find('trials_until_change')>-1] 
         if outcome_msgs:
             n_new = len(outcome_msgs)
             self.data = np.roll(self.data, -n_new, axis=0)
@@ -110,23 +111,18 @@ class Sequence_Plot():
         if new_block_msgs:
             for nb_msg in new_block_msgs:
                 content = nb_msg[2].split(',')
-                self.next_block_start = int(content[2])
-                # if self.trial_num>0: # remove old marker and place marker where probability change actually occured. This takes into account instances where the new bout was scheduled for a trial that already occured.
-                #     self.plot_widget.removeItem(self.new_bout_arrow)
-                #     self.update_block_marker(self.trial_num+1)
-                # self.update_block_marker(self.next_block_start)
-                # self.new_bout_arrow.setPos(self.next_block_start,4.85)
+                self.next_block_start = int(content[2]) + self.trial_num
                 self.new_bout_line.setValue(self.next_block_start)
                 self.bout_text.setPos(self.next_block_start, 6.5)
-                self.bout_text.setText("hi{}".format(self.next_block_start))
+                self.reward_seq = content[1]
+                self.update_title()
         if newBlock_var_update_msgs:
             for block_start_update in newBlock_var_update_msgs:
                 content = block_start_update[2].split(' ')
-                self.next_block_start = int(content[1])
-                # self.update_block_marker(self.next_block_start)
-                # self.new_bout_arrow.setPos(self.next_block_start,4.85)
+                self.next_block_start = int(content[1]) + self.trial_num
                 self.new_bout_line.setValue(self.next_block_start)
                 self.bout_text.setPos(self.next_block_start, 6.5)
+                self.bout_text.setText(str(self.next_block_start - self.trial_num))
         if newBlock_var_update_msgs:
                 self.update_title()
 
@@ -138,10 +134,7 @@ class Sequence_Plot():
     def update_title(self):
         self.plot_widget.setTitle('<font size="4"><span>{} Choices made --- Current Reward Sequence: {} --- Background Reward Rate: {}</span></font>'.format(
             self.trial_num,self.reward_seq,self.background_reward))
+        self.bout_text.setText(str(self.next_block_start - self.trial_num))
 
     def update_block_marker(self,xpos):
-        # self.plot_widget.removeItem(self.new_bout_arrow)
-        # self.new_bout_arrow = pg.ArrowItem(pos=(xpos,4.85),angle=-90,brush='#FF1FE6',pen='#FF1FE6',headLen=18)
-        # self.plot_widget.addItem(self.new_bout_arrow)
         pass
-    
