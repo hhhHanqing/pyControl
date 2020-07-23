@@ -22,6 +22,8 @@ class Task_plot(QtGui.QWidget):
 
         # Create widgets
         self.choice_plot = Choice_plot(self, data_len=markov_history_len)
+        self.markov_plot = Markov_Plot(self.choice_plot.plot_widget)
+        self.sequence_plot =Sequence_Plot(self.choice_plot.plot_widget)
         self.states_plot = States_plot(self, data_len=state_history_len)
         self.events_plot = Events_plot(self, data_len=event_history_len)
         self.analog_plot = Analog_plot(self, data_dur=analog_history_dur)
@@ -30,7 +32,6 @@ class Task_plot(QtGui.QWidget):
         self.choice_update_checkbox = QtWidgets.QCheckBox('Keep last {} trials in view'.format(markov_plot_window))
         self.choice_update_checkbox.setChecked(True)
         self.choice_update_checkbox.setEnabled(False)
-        self.choice_update_checkbox.clicked.connect(self.choice_plot.toggle_update)
 
         self.zoom_fit_btn = QtGui.QPushButton('Past 10 minutes')
         self.zoom_medium_btn = QtGui.QPushButton('Past 90 seconds')
@@ -46,17 +47,12 @@ class Task_plot(QtGui.QWidget):
         self.events_plot.axis.setXLink(self.states_plot.axis)
         self.analog_plot.axis.setXLink(self.states_plot.axis)
         self.analog_plot.axis.setVisible(False)
-        self.choice_plot.axis.setVisible(False)
+        self.choice_plot.plot_widget.setVisible(False)
         self.choice_update_checkbox.setVisible(False)
 
         # create layout
-        self.vertical_layout = QtGui.QVBoxLayout()
-        self.vertical_layout.addWidget(self.choice_plot.axis,1)
-        self.vertical_layout.addWidget(self.states_plot.axis,1)
-        self.vertical_layout.addWidget(self.events_plot.axis,1)
-        self.vertical_layout.addWidget(self.analog_plot.axis,1)
         self.vertical_layout = QtGui.QGridLayout()
-        self.vertical_layout.addWidget(self.choice_plot.axis,0,0,1,3)
+        self.vertical_layout.addWidget(self.choice_plot.plot_widget,0,0,1,3)
         self.vertical_layout.addWidget(self.choice_update_checkbox,1,0,1,3,Qt.AlignCenter)
         self.vertical_layout.addWidget(self.states_plot.axis,2,0,1,3)
         self.vertical_layout.addWidget(self.events_plot.axis,3,0,1,3)
@@ -70,6 +66,30 @@ class Task_plot(QtGui.QWidget):
         self.setLayout(self.vertical_layout)
 
     def set_state_machine(self, sm_info):
+        taskname = sm_info['name']
+        if taskname == 'markov' or taskname == 'sequence':
+            self.choice_plot.plot_widget.setVisible(True)
+            self.choice_update_checkbox.setVisible(True)
+            # substitute choice plot methods
+            if  taskname == 'markov': # swap in markov choice plot methods
+                self.markov_plot.is_active = True
+                self.choice_plot.setup_plot_widget = self.markov_plot.setup_plot_widget
+                self.choice_plot.run_start = self.markov_plot.run_start
+                self.choice_plot.process_data = self.markov_plot.process_data
+                self.choice_plot.toggle_update = self.markov_plot.toggle_update
+            else: #  sequence choice plot methods
+                self.sequence_plot.is_active = True
+                self.choice_plot.setup_plot_widget = self.sequence_plot.setup_plot_widget
+                self.choice_plot.run_start = self.sequence_plot.run_start
+                self.choice_plot.process_data = self.sequence_plot.process_data
+                self.choice_plot.toggle_update = self.sequence_plot.toggle_update
+            self.choice_update_checkbox.clicked.connect(self.choice_plot.toggle_update)
+        else:
+            self.markov_plot.is_active = False
+            self.sequence_plot.is_active = False
+            self.choice_plot.plot_widget.setVisible(False)
+            self.choice_update_checkbox.setVisible(False)
+
         # Initialise plots with state machine information.
         self.choice_plot.set_state_machine(sm_info)
         self.states_plot.set_state_machine(sm_info)
@@ -82,13 +102,6 @@ class Task_plot(QtGui.QWidget):
         else:
             self.analog_plot.axis.setVisible(False)
             self.events_plot.axis.getAxis('bottom').setLabel('Time (seconds)')
-
-        if self.choice_plot.is_markov_task:
-            self.choice_plot.axis.setVisible(True)
-            self.choice_update_checkbox.setVisible(True)
-        else:
-            self.choice_plot.axis.setVisible(False)
-            self.choice_update_checkbox.setVisible(False)
 
     def run_start(self, recording):
         self.pause_button.setChecked(False)
@@ -134,6 +147,37 @@ class Task_plot(QtGui.QWidget):
         self.states_plot.axis.setRange(xRange=[-90*1.02, 0], padding=0)
     def close_zoom(self):
         self.states_plot.axis.setRange(xRange=[-15*1.02, 0], padding=0)   
+
+########################################33
+# Choice Plot
+###############################################
+class Choice_plot():
+
+    def __init__(self, parent=None, data_len=100):
+        self.plot_widget = pg.PlotWidget(title='Choices')
+        
+    def set_state_machine(self,sm_info):
+        self.setup_plot_widget()
+    
+    def setup_plot_widget(self):
+        pass
+
+    def run_start(self):
+        pass
+
+    def process_data(self, new_data):
+        pass
+
+    def toggle_update(self):
+        pass
+
+    def update_title(self):
+        pass
+
+    def update_block_marker(self,xpos):
+        pass
+
+
 
 # States_plot --------------------------------------------------------
 
