@@ -67,11 +67,10 @@ class Sequence_GUI(QtGui.QWidget):
         self.sequence_layout = QtGui.QGridLayout()
         # create widgets
         self.reward_array = sequence_text_var(init_vars,'<b>Sequence Array</b>','sequence_array_text',text_width=150)
-        self.bout_mean = spin_var(init_vars,'<b>Bout distribution µ</b>', 1,500,1,'','bout_mean')
-        self.bout_sd = spin_var(init_vars,'<b>Bout distribution σ</b>', 1,500,1,'','bout_sd')
-        self.next_bout = spin_var(init_vars,'<b>Trials until new bout</b>', 1,500,1,'','trials_until_change')
+        self.bout_length = two_var(init_vars,'<b>Bout Length Distribution</b>','<b>µ</b>', 1,500,1,'','bout_mean','<b>σ</b>', 1,500,1,'','bout_sd')
+        self.next_bout = spin_var(init_vars,'<b>Trials Until New Bout</b>', 1,500,1,'','trials_until_change')
         # place widgets
-        for i,var in enumerate([self.reward_array,self.bout_mean,self.bout_sd,self.next_bout]):
+        for i,var in enumerate([self.reward_array,self.bout_length,self.next_bout]):
             var.setBoard(board)
             var.add_to_grid(self.sequence_layout,i)
         self.sequence_group.setLayout(self.sequence_layout)
@@ -185,6 +184,7 @@ class Sequence_GUI(QtGui.QWidget):
         self.side_start.setEnabled(not self.constant_side_radio.isChecked())
         self.side_increment.setEnabled(not self.constant_side_radio.isChecked())
         self.side_max.setEnabled(not self.constant_side_radio.isChecked())
+
 class spin_var():
     def __init__(self,init_var_dict,label,min,max,step,suffix,varname=''):
         center = QtCore.Qt.AlignCenter
@@ -258,6 +258,118 @@ class spin_var():
     def setVisible(self,makeVisible):
         self.label.setVisible(makeVisible)
         self.spn.setVisible(makeVisible)
+        self.get_btn.setVisible(makeVisible)
+        self.set_btn.setVisible(makeVisible)
+        
+class two_var():
+    def __init__(self,init_var_dict,label0,label,min,max,step,suffix,varname,label2,min2,max2,step2,suffix2,varname2):
+        center = QtCore.Qt.AlignCenter
+        Vcenter = QtCore.Qt.AlignVCenter
+        right = QtCore.Qt.AlignRight
+        button_width = 65
+        spin_width = 80
+        self.label0 = QtGui.QLabel(label0)
+        self.label0.setAlignment(right|Vcenter)
+
+        self.label = QtGui.QLabel(label)
+        self.label.setAlignment(right|Vcenter)
+        self.varname = varname
+
+        if isinstance(min,float) or isinstance(max,float) or isinstance(step,float):
+            self.spn = QtGui.QDoubleSpinBox()
+        else:
+            self.spn = QtGui.QSpinBox() 
+
+        self.spn.setRange(min,max)
+        self.spn.setValue(eval(init_var_dict[varname]))
+        self.spn.setSingleStep(step)
+        self.spn.setSuffix(suffix)
+        self.spn.setAlignment(center)
+        self.spn.setMaximumWidth(spin_width)
+
+
+        self.label2 = QtGui.QLabel(label2)
+        self.label2.setAlignment(right|Vcenter)
+        self.varname2 = varname2
+
+        if isinstance(min2,float) or isinstance(max2,float) or isinstance(step2,float):
+            self.spn2 = QtGui.QDoubleSpinBox()
+        else:
+            self.spn2 = QtGui.QSpinBox() 
+
+        self.spn2.setRange(min,max)
+        self.spn2.setValue(eval(init_var_dict[varname2]))
+        self.spn2.setSingleStep(step2)
+        self.spn2.setSuffix(suffix2)
+        self.spn2.setAlignment(center)
+        self.spn2.setMaximumWidth(spin_width)
+
+
+        self.get_btn = QtGui.QPushButton('Get')
+        self.get_btn.setMinimumWidth(button_width)
+        self.get_btn.setMaximumWidth(button_width)
+        self.get_btn.setAutoDefault(False)
+        self.get_btn.clicked.connect(self.get)
+
+        self.set_btn = QtGui.QPushButton('Set')
+        self.set_btn.setMinimumWidth(button_width)
+        self.set_btn.setMaximumWidth(button_width)
+        self.set_btn.setAutoDefault(False)
+        self.set_btn.clicked.connect(self.set)
+
+    def add_to_grid(self,grid,row):
+        grid.addWidget(self.label0,row,0)
+        widget = QtGui.QWidget()
+        layout = QtGui.QHBoxLayout()
+        layout.addWidget(self.label)
+        layout.addWidget(self.spn)
+        layout.addWidget(self.label2)
+        layout.addWidget(self.spn2)
+        widget.setLayout(layout)
+        grid.addWidget(widget,row,1)
+        grid.addWidget(self.get_btn,row,2)
+        grid.addWidget(self.set_btn,row,3)
+
+    def setEnabled(self,doEnable):
+        self.label.setEnabled(doEnable)
+        self.spn.setEnabled(doEnable)
+        self.label2.setEnabled(doEnable)
+        self.spn2.setEnabled(doEnable)
+        self.get_btn.setEnabled(doEnable)
+        self.set_btn.setEnabled(doEnable)
+
+    def setBoard(self,board):
+        self.board = board
+
+    def get(self):
+        if self.board.framework_running: # Value returned later.
+            self.board.get_variable(self.varname)
+            self.board.get_variable(self.varname2)
+            QtCore.QTimer.singleShot(200, self.reload)
+        else: # Value returned immediately.
+            self.spn.setValue(self.board.get_variable(self.varname))
+            self.spn2.setValue(self.board.get_variable(self.varname2))
+
+    def set(self):
+        if self.board.framework_running: # Value returned later.
+            self.board.set_variable(self.varname,round(self.spn.value(),2))
+            self.board.set_variable(self.varname2,round(self.spn2.value(),2))
+            QtCore.QTimer.singleShot(200, self.reload)
+        else: # Value returned immediately.
+            self.spn.setValue(self.board.get_variable(self.varname))
+            self.spn2.setValue(self.board.get_variable(self.varname2))
+    
+    def reload(self):
+        '''Reload value from sm_info.  sm_info is updated when variables are output
+        during framework run due to get/set.'''
+        self.spn.setValue(eval(str(self.board.sm_info['variables'][self.varname])))
+        self.spn2.setValue(eval(str(self.board.sm_info['variables'][self.varname2])))
+
+    def setVisible(self,makeVisible):
+        self.label.setVisible(makeVisible)
+        self.spn.setVisible(makeVisible)
+        self.label2.setVisible(makeVisible)
+        self.spn2.setVisible(makeVisible)
         self.get_btn.setVisible(makeVisible)
         self.set_btn.setVisible(makeVisible)
 
