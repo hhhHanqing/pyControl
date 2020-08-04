@@ -2,6 +2,7 @@
 import pyqtgraph as pg
 import numpy as np
 from config.gui_settings import markov_history_len,markov_plot_window
+from PyQt5.QtCore import Qt
 
 class Sequence_Plot():
     def __init__(self, parent_plot, data_len=100):
@@ -15,19 +16,22 @@ class Sequence_Plot():
         self.is_active = False
         self.do_update = True
         self.data_len = data_len
-        self.next_block_start = 0
-        # self.new_bout_arrow = pg.ArrowItem(pos=(0,7.85),angle=-90,brush='#FF1FE6',pen='#FF1FE6',headLen=18)
         self.new_bout_line = pg.InfiniteLine(angle=90,pen='#FF1FE6')
-        self.bout_text = pg.TextItem("testing", anchor=(1, .5))
-        self.last_choice = ''
-        self.reward_seq = ''
-        self.background_reward = ''
+        self.bout_text = pg.TextItem("testing", anchor=(0, .5))
 
     def set_state_machine(self,sm_info):
         if not self.is_active: return
         self.setup_plot_widget()
     
     def setup_plot_widget(self):
+        self.last_choice = ''
+        self.reward_seq = ''
+        self.background_reward = ''
+        self.label_new_bout = False
+        self.next_seq = ''
+        self.bout_start_trial = 0
+        self.next_block_start = 0
+        
         self.plot_widget.hideAxis('right')
         self.plot_widget.showAxis('left')
         self.plot_widget.setRange(xRange=[-1,markov_plot_window+10], padding=0)
@@ -40,7 +44,7 @@ class Sequence_Plot():
         self.plot_widget.getAxis('right').setWidth(75)
         self.plot_widget.getAxis('left').setWidth(50)
 
-        self.plot_widget.setYRange(5,8, padding=0.1)
+        self.plot_widget.setYRange(4,9, padding=0.1)
         self.plot = self.plot_widget.plot(pen=None, symbol='o', symbolSize=6, symbolPen=None)
 
         self.plot_widget.setTitle('Choices and Outcomes')
@@ -64,7 +68,7 @@ class Sequence_Plot():
             n_new = len(outcome_msgs)
             self.data = np.roll(self.data, -n_new, axis=0)
             for i, ne in enumerate(outcome_msgs):
-                trial_num_string,self.reward_seq,background_reward_str,choice,outcome,abandoned= ne[-1].split(',')[1:]
+                trial_num_string,self.reward_seq,background_reward_str,choice,outcome,abandoned,center_hold,side_delay= ne[-1].split(',')[1:]
                 self.background_reward = float(background_reward_str)
                 self.trial_num = int(trial_num_string)
                 if choice == 'L':
@@ -110,12 +114,24 @@ class Sequence_Plot():
                 self.plot_widget.setRange(xRange=[self.trial_num-markov_plot_window,self.trial_num+5], padding=0)
         if new_block_msgs:
             for nb_msg in new_block_msgs:
+                # label old bout change
+                transition_line = pg.InfiniteLine(angle=90,pen=pg.mkPen(color='#FF1FE6',style=Qt.DashLine))
+                transition_line.setValue(self.next_block_start + .5)
+                self.plot_widget.addItem(transition_line)
+                self.label_new_bout = True
+
+
                 content = nb_msg[2].split(',')
+                # add new bout change
                 self.next_block_start = int(content[2]) + self.trial_num
-                self.new_bout_line.setValue(self.next_block_start)
-                self.bout_text.setPos(self.next_block_start, 6.5)
+                self.next_seq = content[3]
+                self.new_bout_line.setValue(self.next_block_start + .5)
+                self.bout_text.setPos(self.next_block_start + .5, 6.5)
+
+            # update title
                 self.reward_seq = content[1]
                 self.update_title()
+                
         if newBlock_var_update_msgs:
             for block_start_update in newBlock_var_update_msgs:
                 content = block_start_update[2].split(' ')
@@ -132,9 +148,31 @@ class Sequence_Plot():
             self.plot_widget.setRange(xRange=[self.trial_num-markov_plot_window,self.trial_num+5], padding=0)
 
     def update_title(self):
-        self.plot_widget.setTitle('<font size="4"><span>{} Choices made --- Current Reward Sequence: {} --- Background Reward Rate: {}</span></font>'.format(
-            self.trial_num,self.reward_seq,self.background_reward))
-        self.bout_text.setText(str(self.next_block_start - self.trial_num))
+        self.plot_widget.setTitle('<font size="4">{} Choices made --- Current Reward Sequence:{} --- Background Reward Rate: {}</font>'.format(
+            self.trial_num,self.create_color_string(self.reward_seq),self.background_reward))
+        self.bout_text.setHtml('{} in {} trials'.format(self.create_color_string(self.next_seq),str(self.next_block_start - self.trial_num)))
+        if self.label_new_bout:
+            self.label_new_bout = False
+            current_seq_text = pg.TextItem(html = self.create_color_string(self.reward_seq), anchor=(0, .5))
+            current_seq_text.setPos(self.trial_num +.5, 6.5)
+            self.plot_widget.addItem(current_seq_text)
+
+            if self.trial_num != 0: #don't do this for start of session
+                previous_bout_length_text = pg.TextItem(str(self.trial_num - self.bout_start_trial), anchor=(1, .5))
+                previous_bout_length_text.setPos(self.trial_num +.5, 6.5)
+                self.plot_widget.addItem(previous_bout_length_text)
+                self.bout_start_trial = self.trial_num
 
     def update_block_marker(self,xpos):
         pass
+
+    def create_color_string(self,sequence_string):
+        blue,orange = '#00DEFF','#FF9A00'
+        output_string = ''
+        for letter in sequence_string:
+            if letter == 'L':
+                color = orange
+            else:
+                color = blue
+            output_string += '<span style="color: {};">{}</span>'.format(color,letter)
+        return output_string

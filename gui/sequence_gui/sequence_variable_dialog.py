@@ -1,4 +1,5 @@
 from pyqtgraph.Qt import QtGui, QtCore, QtWidgets
+import re
 
 # Custom Variable dialog
 class Sequence_Variables_dialog(QtGui.QDialog):
@@ -65,7 +66,7 @@ class Sequence_GUI(QtGui.QWidget):
         self.sequence_group = QtGui.QGroupBox('Bout Variables')
         self.sequence_layout = QtGui.QGridLayout()
         # create widgets
-        self.reward_array = text_var(init_vars,'<b>Sequence Array</b>','sequence_array_text',text_width=150)
+        self.reward_array = sequence_text_var(init_vars,'<b>Sequence Array</b>','sequence_array_text',text_width=150)
         self.bout_mean = spin_var(init_vars,'<b>Bout distribution µ</b>', 1,500,1,'','bout_mean')
         self.bout_sd = spin_var(init_vars,'<b>Bout distribution σ</b>', 1,500,1,'','bout_sd')
         self.next_bout = spin_var(init_vars,'<b>Trials until new bout</b>', 1,500,1,'','trials_until_change')
@@ -322,3 +323,32 @@ class text_var():
         '''Reload value from sm_info.  sm_info is updated when variables are output
         during framework run due to get/set.'''
         self.line_edit.setText(str(self.board.sm_info['variables'][self.varname]))
+
+class sequence_text_var(text_var):
+    def set(self):
+        if self.board.framework_running: # Value returned later.
+            # can't be blank/
+            # only lrLR-
+            good_letters = re.compile('[^lrLR-]')
+            single_dashes = re.compile('[-]{2,}') # single dashes only
+            new_sequence_string = self.line_edit.text()
+            if good_letters.search(new_sequence_string) == None:
+                if single_dashes.search(new_sequence_string):
+                    msg = QtGui.QMessageBox()
+                    msg.setIcon(QtGui.QMessageBox.Warning)
+                    msg.setText("Invalid Input")
+                    msg.setInformativeText("There is more than 1 \"-\" somehwere")
+                    msg.setWindowTitle("Input Error")
+                    msg.exec()
+                else:
+                    self.board.set_variable(self.varname,self.line_edit.text().upper())
+                    QtCore.QTimer.singleShot(200, self.reload)
+            else:
+                msg = QtGui.QMessageBox()
+                msg.setIcon(QtGui.QMessageBox.Warning)
+                msg.setText("Invalid Input")
+                msg.setInformativeText('Sequences can only be made up of letters \"L\" and \"R\" and should be separated by a single \"-\"')
+                msg.setWindowTitle("Input Error")
+                msg.exec()
+        else: # Value returned immediately.
+            self.line_edit.setText(self.board.get_variable(self.varname))

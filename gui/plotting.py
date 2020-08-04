@@ -13,7 +13,7 @@ from gui.sequence_gui.choice_plot import *
 # ----------------------------------------------------------------------------------------
 # Task_plot 
 # ----------------------------------------------------------------------------------------
-
+width_adjustment = 6.5
 class Task_plot(QtGui.QWidget):
     ''' Widget for plotting the states, events and analog inputs output by a state machine.'''
 
@@ -198,7 +198,7 @@ class States_plot():
         self.axis.clear()
         max_len = max([len(n) for n in list(sm_info['states'])+list(sm_info['events'])])
         self.axis.getAxis('right').setTicks([[(i, n) for (n, i) in sm_info['states'].items()]])
-        self.axis.getAxis('right').setWidth(5*max_len)
+        self.axis.getAxis('right').setWidth(width_adjustment*max_len)
         self.axis.setYRange(min(self.state_IDs), max(self.state_IDs), padding=0.1)
         self.n_colours = len(sm_info['states'])+len(sm_info['events'])
         self.plots = {ID: self.axis.plot(pen=pg.mkPen(pg.intColor(ID, self.n_colours), width=3))
@@ -257,7 +257,7 @@ class Events_plot():
         if not self.event_IDs: return # State machine can have no events.
         max_len = max([len(n) for n in list(sm_info['states'])+list(sm_info['events'])])
         self.axis.getAxis('right').setTicks([[(i, n) for (n, i) in sm_info['events'].items()]])
-        self.axis.getAxis('right').setWidth(5*max_len)
+        self.axis.getAxis('right').setWidth(width_adjustment*max_len)
         self.axis.setYRange(min(self.event_IDs), max(self.event_IDs), padding=0.1)
         self.n_colours = len(sm_info['states'])+len(sm_info['events'])
         self.plot = self.axis.plot(pen=None, symbol='o', symbolSize=6, symbolPen=None)

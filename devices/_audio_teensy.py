@@ -15,6 +15,9 @@ class Teensy_audio():
             self.uart.write('R')
         return True
 
+    def beep(self):
+        self.uart.write('L')
+
     def stop(self):
         self.uart.write('S')
         return False

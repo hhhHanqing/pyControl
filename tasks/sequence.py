@@ -29,8 +29,8 @@ v.sequence_index___ = -1
 ##### Configurable Variables #######
 
 ### Bout Variables
-v.sequence_array_text = "LLR-RRL-RRLRR-LLL"
-v.bout_mean = 10
+v.sequence_array_text = "LLR-RRL-RLL"
+v.bout_mean = 12
 v.bout_sd = 4
 v.trials_until_change = 0
 
@@ -38,7 +38,7 @@ v.trials_until_change = 0
 v.reward_seq___ = 'LLR'
 v.block_change_trial = 0
 v.correct_reward_rate = 0.9
-v.background_reward_rate = .1
+v.background_reward_rate = .05
 v.reward_volume = 250 # microliters
 
 ### Center Variables
@@ -51,7 +51,7 @@ v.center_hold_max = 5000
 
 ### Side Variables
 v.time_blink = 100 # milliseconds
-v.time_side_delay = 500 # milliseconds
+v.time_side_delay = 1000 # milliseconds
 v.side_delay_constant = True
 v.side_delay_start = 500
 v.side_delay_increment = 1
@@ -63,8 +63,9 @@ initial_state = 'wait_for_center'
 
 def run_start():
     start_new_block()
-    # assign bout lengths
-    # start_new_block()
+    hw.Speakers.set_volume(30)
+    updateHold()
+    updateSide()
 
 def wait_for_center(event):
     if event == 'entry':
@@ -85,6 +86,8 @@ def wait_for_center(event):
     elif event == 'center_hold_timer':
         if v.in_center___:
             goto_state('wait_for_choice')
+    elif event == 'exit':
+        hw.Speakers.beep()
 
 def wait_for_choice(event):
     if event == 'entry':
@@ -96,6 +99,8 @@ def wait_for_choice(event):
         getOutcome('R')
     elif event == 'L_nose':
         getOutcome('L')
+    elif event == 'exit':
+        hw.Speakers.beep()
 
 def wait_for_outcome(event):
     if event == 'entry':
@@ -123,7 +128,7 @@ def wait_for_outcome(event):
     elif event == 'exit':
         disarm_timer('blink_timer')
         disarm_timer('side_delay_timer')
-        print('rslt,{},{},{},{},{},{}'.format(v.trial_current_number___,v.reward_seq___,v.background_reward_rate,v.chosen_side___,v.outcome___,v.abandoned___))
+        print('rslt,{},{},{},{},{},{},{},{}'.format(v.trial_current_number___,v.reward_seq___,v.background_reward_rate,v.chosen_side___,v.outcome___,v.abandoned___,v.hold_center___,v.side_delay___))
         v.trials_until_change += -1
         if v.trials_until_change<=0:
             start_new_block()
@@ -137,24 +142,28 @@ def all_states(event):
     if Rmsg:
         print("Stopping task. Right pump empty")
         stop_framework()
-    elif event == 'button':
-        start_new_block()
+    if event == 'button':
+        pass
 
 ################ helper functions ############
 def start_new_block ():
     v.sequence_index___+=1
     sequence_array = v.sequence_array_text.upper().split('-')
     
+    # get new sequence
     if v.sequence_index___ == len(sequence_array): # loop around to the start if we're at the end of the sequence array
         v.sequence_index___ = 0
-
     v.reward_seq___ = sequence_array[v.sequence_index___]
-    # get next sequence from array
+
+    # get upcoming sequence
+    next_index = v.sequence_index___ + 1
+    if next_index == len(sequence_array): # loop around to the start if we're at the end of the sequence array
+        next_index = 0
+    next_seq = sequence_array[next_index]
+
     # set new block_change_trial
     v.trials_until_change =  int(gauss_rand(v.bout_mean,v.bout_sd))
-    # update sequence count
-    # if new lap, update lap count
-    print('NB,{},{}'.format(v.reward_seq___,v.trials_until_change))
+    print('NB,{},{},{}'.format(v.reward_seq___,v.trials_until_change,next_seq))
 
 def getOutcome(choice):
     v.current_sequence = v.current_sequence[1:] + choice
