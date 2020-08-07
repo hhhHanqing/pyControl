@@ -61,13 +61,14 @@ class Sequence_GUI(QtGui.QWidget):
         self.board = board
 
         center = QtCore.Qt.AlignCenter
+        left_align = QtCore.Qt.AlignLeft
 
         ##############  Sequence Scheduler ##############
         self.sequence_group = QtGui.QGroupBox('Bout Variables')
         self.sequence_layout = QtGui.QGridLayout()
         # create widgets
         self.reward_array = sequence_text_var(init_vars,'<b>Sequence Array</b>','sequence_array_text',text_width=150)
-        self.bout_length = two_var(init_vars,'<b>Bout Length Distribution</b>','<b>µ</b>', 1,500,1,'','bout_mean','<b>σ</b>', 1,500,1,'','bout_sd')
+        self.bout_length = two_var(init_vars,'<b>Bout Length Distribution</b>','µ', 1,500,1,'','bout_mean','σ', 1,500,1,'','bout_sd')
         self.next_bout = spin_var(init_vars,'<b>Trials Until New Bout</b>', 1,500,1,'','trials_until_change')
         # place widgets
         for i,var in enumerate([self.reward_array,self.bout_length,self.next_bout]):
@@ -79,7 +80,6 @@ class Sequence_GUI(QtGui.QWidget):
         self.reward_group = QtGui.QGroupBox('Reward Variables')
         self.reward_layout = QtGui.QGridLayout()
         # create widgets
-        # self.reward_seq = text_var(init_vars,'<b>Reward Sequence</b>','reward_seq')
         self.reward_vol = spin_var(init_vars,'💧<b>Reward Volume</b>', 1,500,25,' µL','reward_volume')
         self.correct_rate = spin_var(init_vars,'✅<b>Correct Reward Rate</b>',0,1,.05,'','correct_reward_rate')
         self.background_rate = spin_var(init_vars,'🎲<b>Background Reward Rate</b>',0,1,.05,'','background_reward_rate')
@@ -89,8 +89,10 @@ class Sequence_GUI(QtGui.QWidget):
             var.add_to_grid(self.reward_layout,i)
         self.reward_group.setLayout(self.reward_layout)
 
-        ############## Center Variables ##############
-        self.center_group = QtGui.QGroupBox('Center Variables')
+        self.center_side_tabs = QtGui.QTabWidget()
+        
+        ############## Center Variables #################################################################################3
+        self.center_widget = QtGui.QWidget()
         self.center_layout = QtGui.QGridLayout()
         
         self.center_hold_label = QtGui.QLabel('<b>Center Hold</b>')
@@ -117,13 +119,12 @@ class Sequence_GUI(QtGui.QWidget):
             var.setBoard(board)
             var.add_to_grid(self.center_layout,i+1)
 
-        self.center_group.setLayout(self.center_layout)
+        self.center_widget.setLayout(self.center_layout)
         self.show_center_options()
         
-        ############## Side Variables ##############
-        self.side_group = QtGui.QGroupBox('Side Variables')
+        ############## Side Variables ################################################################################33
+        self.side_widget = QtGui.QWidget()
         self.side_layout = QtGui.QGridLayout()
-
 
         self.side_delay_label = QtGui.QLabel('<b>Side Delay</b>')
         self.side_delay_label.setAlignment(QtCore.Qt.AlignRight)
@@ -147,15 +148,15 @@ class Sequence_GUI(QtGui.QWidget):
         for i,var in enumerate([self.side_delay,self.side_start,self.side_increment,self.side_max,self.blink_delay]):
             var.setBoard(board)
             var.add_to_grid(self.side_layout,i+1)
-        self.side_group.setLayout(self.side_layout)
+        self.side_widget.setLayout(self.side_layout)
         self.show_side_options()
 
         ###### Place groups into layout ############
-        grid_layout.addWidget(self.sequence_group,0,0,1,3)
-        grid_layout.addWidget(self.reward_group,1,0,1,3)
-        grid_layout.addWidget(self.center_group,2,0,1,2)
-        grid_layout.addWidget(self.side_group,3,0,1,1)
-        grid_layout.setColumnStretch(9,1)
+        grid_layout.addWidget(self.sequence_group,0,0,left_align)
+        grid_layout.addWidget(self.reward_group,1,0,left_align)
+        self.center_side_tabs.addTab(self.center_widget,"Center Variables")
+        self.center_side_tabs.addTab(self.side_widget,"Side Variables")
+        grid_layout.addWidget(self.center_side_tabs,2,0,left_align)
         grid_layout.setRowStretch(10,1)
 
         self.constant_center_radio.clicked.connect(self.update_center)
@@ -191,10 +192,9 @@ class spin_var():
         Vcenter = QtCore.Qt.AlignVCenter
         right = QtCore.Qt.AlignRight
         button_width = 65
-        spin_width = 80
+        spin_width = 85
         self.label = QtGui.QLabel(label)
         self.label.setAlignment(right|Vcenter)
-        # self.label.setToolTip(helpText)
         self.varname = varname
 
         if isinstance(min,float) or isinstance(max,float) or isinstance(step,float):
@@ -207,7 +207,7 @@ class spin_var():
         self.spn.setSingleStep(step)
         self.spn.setSuffix(suffix)
         self.spn.setAlignment(center)
-        self.spn.setMaximumWidth(spin_width)
+        self.spn.setMinimumWidth(spin_width)
 
         self.get_btn = QtGui.QPushButton('Get')
         self.get_btn.setMinimumWidth(button_width)
@@ -267,7 +267,7 @@ class two_var():
         Vcenter = QtCore.Qt.AlignVCenter
         right = QtCore.Qt.AlignRight
         button_width = 65
-        spin_width = 80
+        spin_width = 55 
         self.label0 = QtGui.QLabel(label0)
         self.label0.setAlignment(right|Vcenter)
 
@@ -285,7 +285,7 @@ class two_var():
         self.spn.setSingleStep(step)
         self.spn.setSuffix(suffix)
         self.spn.setAlignment(center)
-        self.spn.setMaximumWidth(spin_width)
+        self.spn.setMinimumWidth(spin_width)
 
 
         self.label2 = QtGui.QLabel(label2)
@@ -302,7 +302,7 @@ class two_var():
         self.spn2.setSingleStep(step2)
         self.spn2.setSuffix(suffix2)
         self.spn2.setAlignment(center)
-        self.spn2.setMaximumWidth(spin_width)
+        self.spn2.setMinimumWidth(spin_width)
 
 
         self.get_btn = QtGui.QPushButton('Get')
@@ -325,6 +325,7 @@ class two_var():
         layout.addWidget(self.spn)
         layout.addWidget(self.label2)
         layout.addWidget(self.spn2)
+        layout.setContentsMargins(0,0,0,0)
         widget.setLayout(layout)
         grid.addWidget(widget,row,1)
         grid.addWidget(self.get_btn,row,2)
@@ -381,7 +382,6 @@ class text_var():
         button_width = 65
         self.label = QtGui.QLabel(label)
         self.label.setAlignment(right|Vcenter)
-        # self.label.setToolTip(helpText)
         self.varname = varname
 
         self.line_edit = QtGui.QLineEdit()
