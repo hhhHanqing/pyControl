@@ -483,7 +483,7 @@ class Pycboard(Pyboard):
             self.serial.write(b'P')
             return None 
 
-    def set_cerbero_serial(self,cerebro_radio_channel):
+    def set_cerebro_serial(self,cerebro_radio_channel):
         if self.framework_running: # Set variable with serial command.
             data = repr(cerebro_radio_channel).encode() + b's'
             data_len = len(data).to_bytes(2, 'little')

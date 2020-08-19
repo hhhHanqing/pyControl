@@ -562,7 +562,7 @@ class base_station():
         if self.board.framework_running:
             modifiers = QtWidgets.QApplication.keyboardModifiers()
             if modifiers == QtCore.Qt.ShiftModifier:
-                self.board.set_cerbero_serial(self.cerebro_channel.spn.value())
+                self.board.set_cerebro_serial(self.cerebro_channel.spn.value())
             else:
                 self.board.initialize_cerebro_connection(self.cerebro_channel.spn.value())
 
