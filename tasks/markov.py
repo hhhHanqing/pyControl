@@ -193,6 +193,7 @@ def all_states(event):
         stop_framework()
 
 def run_end():
+    hw.BaseStation.set_to_zero()
     hw.Llever.retract()
     hw.Rlever.retract()
     v.speaker_is_playing___ = hw.Speakers.stop()

@@ -18,3 +18,6 @@ class Base_station_serial():
             return self.uart.readline().decode("utf-8").strip('\n')
         else:
             return None
+
+    def set_to_zero(self):
+        self.uart.write('K,0\n')

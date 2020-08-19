@@ -16,6 +16,7 @@ events = [
     'blink_timer',
     'side_delay_timer',
     'button',
+    'check_serial'
     ]
 
 ####### Hidden script variables ##########
@@ -57,6 +58,16 @@ v.side_delay_start = 500
 v.side_delay_increment = 1
 v.side_delay_max = 8000
 
+#Cerebro variables
+v.diode_power_left = 0
+v.diode_power_right = 0
+v.pulse_train = False
+v.start_delay = 0
+v.on_time = 2
+v.off_time = 0
+v.train_dur = 0
+v.ramp_dur = 0.3
+
 #Other variables
 v.current_sequence = '______' # up to 6 letter sequence
 initial_state = 'wait_for_center'
@@ -66,6 +77,7 @@ def run_start():
     hw.Speakers.set_volume(30)
     updateHold()
     updateSide()
+    set_timer('check_serial',10)
 
 def wait_for_center(event):
     if event == 'entry':
@@ -134,6 +146,11 @@ def wait_for_outcome(event):
             start_new_block()
 
 def all_states(event):
+    if event == 'check_serial':
+        set_timer('check_serial',10)
+        msg = hw.BaseStation.check_for_serial()
+        if msg:
+            print(msg)
     Lmsg = hw.Lpump.check_for_serial()
     if Lmsg:
         print("Stoping task. Left pump empty")
@@ -144,6 +161,9 @@ def all_states(event):
         stop_framework()
     if event == 'button':
         pass
+
+def run_end():
+    hw.BaseStation.set_to_zero()
 
 ################ helper functions ############
 def start_new_block ():
