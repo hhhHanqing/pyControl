@@ -12,36 +12,9 @@ class Markov_Variables_dialog(QtGui.QDialog):
         self.layout.addWidget(self.variables_grid)
         self.layout.setContentsMargins(0,0,0,0)
         self.setLayout(self.layout)
-        self.diode_was_different=False
 
     def process_data(self, new_data):
-        for data_array in new_data:
-            if data_array[0]=='P': # printed miessage
-                data_chunks = data_array[2].split(',')
-                if data_chunks[0][0]=='[' and data_chunks[0][-1]==']': # is an incoming message from cerebro
-                    try:
-                        msg_type = data_chunks[1]
-                        if msg_type == 'Btry':
-                            self.variables_grid.markov_gui.base_station.update_battery_status(int(data_chunks[2]))
-                        elif msg_type == 'DP':
-                            left_pwr,right_pwr = data_chunks[2].split('-')
-                            if self.variables_grid.markov_gui.base_station.diode_power_left.spn.value() != int(left_pwr) or self.variables_grid.markov_gui.base_station.diode_power_right.spn.value() != int(right_pwr):
-                                self.diode_was_different = True
-                                QtCore.QTimer.singleShot(500, self.variables_grid.markov_gui.base_station.set_diode_powers)
-                            else:
-                                if self.diode_was_different:
-                                    QtCore.QTimer.singleShot(500, self.variables_grid.markov_gui.base_station.update_task_diode_powers)
-                                    self.diode_was_different = False
-                        elif msg_type == 'Wave':
-                            start_delay,on_time,off_time,train_dur,ramp_dur = data_chunks[2].split('-')
-                            if self.variables_grid.markov_gui.base_station.pulse_train_radio.isChecked():
-                                if self.variables_grid.markov_gui.base_station.start_delay.mills_str() != start_delay or self.variables_grid.markov_gui.base_station.on_time.mills_str() != on_time or  self.variables_grid.markov_gui.base_station.off_time.mills_str() != off_time or  self.variables_grid.markov_gui.base_station.train_dur.mills_str() != train_dur or ramp_dur != '0': 
-                                    QtCore.QTimer.singleShot(2500, self.variables_grid.markov_gui.base_station.send_waveform_parameters)
-                            else:
-                                if self.variables_grid.markov_gui.base_station.start_delay.mills_str() != start_delay or self.variables_grid.markov_gui.base_station.on_time.mills_str() != on_time or off_time != '0' or train_dur != '0' or self.variables_grid.markov_gui.base_station.ramp_dur.mills_str() != ramp_dur: 
-                                    QtCore.QTimer.singleShot(2500, self.variables_grid.markov_gui.base_station.send_waveform_parameters)
-                    except:
-                        print("bad chunk {}".format(data_chunks))
+        self.variables_grid.markov_gui.base_station.process_data(new_data)
 
 class Markov_grid(QtGui.QWidget):
     # Grid of variables to set/get, displayed within scroll area of dialog.
@@ -140,9 +113,8 @@ class Markov_GUI(QtGui.QWidget):
         self.laser_probability.add_to_grid(self.laser_layout,2)
         self.laser_group.setLayout(self.laser_layout)
 
-
+        ########################## Base Station #############################3
         self.base_station = base_station(self.board,init_vars)
-        ###### Cerebro Group #######
 
         grid_layout.addWidget(self.left_right_box,0,0,1,4,left_align)
         grid_layout.addWidget(self.other_box,1,0,1,3,left_align)

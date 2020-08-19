@@ -13,36 +13,9 @@ class Sequence_Variables_dialog(QtGui.QDialog):
         self.layout.addWidget(self.variables_grid)
         self.layout.setContentsMargins(0,0,0,0)
         self.setLayout(self.layout)
-        self.diode_was_different=False
 
     def process_data(self, new_data):
-        for data_array in new_data:
-            if data_array[0]=='P': # printed miessage
-                data_chunks = data_array[2].split(',')
-                if data_chunks[0][0]=='[' and data_chunks[0][-1]==']': # is an incoming message from cerebro
-                    try:
-                        msg_type = data_chunks[1]
-                        if msg_type == 'Btry':
-                            self.variables_grid.sequence_gui.update_battery_status(int(data_chunks[2]))
-                        elif msg_type == 'DP':
-                            left_pwr,right_pwr = data_chunks[2].split('-')
-                            if self.variables_grid.sequence_gui.diode_power_left.spn.value() != int(left_pwr) or self.variables_grid.sequence_gui.diode_power_right.spn.value() != int(right_pwr):
-                                self.diode_was_different = True
-                                QtCore.QTimer.singleShot(500, self.variables_grid.sequence_gui.set_diode_powers)
-                            else:
-                                if self.diode_was_different:
-                                    QtCore.QTimer.singleShot(500, self.variables_grid.sequence_gui.update_task_diode_powers)
-                                    self.diode_was_different = False
-                        elif msg_type == 'Wave':
-                            start_delay,on_time,off_time,train_dur,ramp_dur = data_chunks[2].split('-')
-                            if self.variables_grid.sequence_gui.pulse_train_radio.isChecked():
-                                if self.variables_grid.sequence_gui.start_delay.mills_str() != start_delay or self.variables_grid.sequence_gui.on_time.mills_str() != on_time or  self.variables_grid.sequence_gui.off_time.mills_str() != off_time or  self.variables_grid.sequence_gui.train_dur.mills_str() != train_dur or ramp_dur != '0': 
-                                    QtCore.QTimer.singleShot(2500, self.variables_grid.sequence_gui.send_waveform_parameters)
-                            else:
-                                if self.variables_grid.sequence_gui.start_delay.mills_str() != start_delay or self.variables_grid.sequence_gui.on_time.mills_str() != on_time or off_time != '0' or train_dur != '0' or self.variables_grid.sequence_gui.ramp_dur.mills_str() != ramp_dur: 
-                                    QtCore.QTimer.singleShot(2500, self.variables_grid.sequence_gui.send_waveform_parameters)
-                    except:
-                        print("bad chunk {}".format(data_chunks))
+        self.variables_grid.sequence_gui.base_station.process_data(new_data)
 
 class Sequence_grid(QtGui.QWidget):
     # Grid of variables to set/get, displayed within scroll area of dialog.
@@ -150,12 +123,16 @@ class Sequence_GUI(QtGui.QWidget):
         self.side_widget.setLayout(self.side_layout)
         self.show_side_options()
 
+        ########################## Base Station #############################3
+        self.base_station = base_station(self.board,init_vars)
+
         ###### Place groups into layout ############
         grid_layout.addWidget(self.sequence_group,0,0,left_align)
         grid_layout.addWidget(self.reward_group,1,0,left_align)
         self.center_side_tabs.addTab(self.center_widget,"Center Variables")
         self.center_side_tabs.addTab(self.side_widget,"Side Variables")
         grid_layout.addWidget(self.center_side_tabs,2,0,left_align)
+        grid_layout.addWidget(self.base_station.cerebro_group,3,0,left_align)
         grid_layout.setRowStretch(10,1)
 
         self.constant_center_radio.clicked.connect(self.update_center)

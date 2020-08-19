@@ -390,6 +390,10 @@ class wave_var():
     def setVisible(self,makeVisible):
         self.label.setVisible(makeVisible)
         self.spn.setVisible(makeVisible)
+    
+    def setEnabled(self,enable):
+        self.label.setEnabled(enable)
+        self.spn.setEnabled(enable)
 
     def setBoard(self,board):
         self.board = board
@@ -486,6 +490,7 @@ class base_station():
 
     def __init__(self,board,init_vars):
         self.board = board
+        self.diode_was_different=False
 
 
         # create widgets 
@@ -496,8 +501,11 @@ class base_station():
         self.diode_power_left = wave_var(init_vars,'<b>Left Power</b>',0,1023,1,'','diode_power_left')
         self.diode_power_right = wave_var(init_vars,'<b>Right Power</b>',0,1023,1,'','diode_power_right')
         self.blink_base_btn = QtGui.QPushButton('Blink Base Station')
+        self.blink_base_btn.setAutoDefault(False)
         self.cerebro_connect_btn = QtGui.QPushButton('Connect To Cerebro')
+        self.cerebro_connect_btn.setAutoDefault(False)
         self.cerebro_refresh_btn = QtGui.QPushButton('Refresh')
+        self.cerebro_refresh_btn.setAutoDefault(False)
         self.battery_indicator = QtGui.QProgressBar()
         self.battery_indicator.setRange(0,100)
         self.battery_indicator.setValue(0)
@@ -510,37 +518,36 @@ class base_station():
         self.train_dur = wave_var(init_vars,'<b>Train Duration</b>',0,9999.999,0.250,' s', 'train_dur')
         self.ramp_dur = wave_var(init_vars,'<b>Ramp Down</b>',0,65.5,0.1,' s', 'ramp_dur')
         self.send_waveform_btn = QtGui.QPushButton('Send New Waveform Parameters')
-        self.test_btn = QtGui.QPushButton('Click=Trigger       Shift+Click=Stop')
+        self.send_waveform_btn.setAutoDefault(False)
+        self.test_btn = QtGui.QPushButton('Click=Trigger      \n Shift+Click=Stop')
+        self.test_btn.setAutoDefault(False)
         # place widgets
-        self.cerebro_layout.addWidget(self.blink_base_btn,0,0)
+        self.cerebro_layout.addWidget(self.blink_base_btn,0,1,1,2)
         self.cerebro_channel.add_to_grid(self.cerebro_layout,1)
-        self.cerebro_layout.addWidget(self.cerebro_connect_btn,1,2,1,2)
+        self.cerebro_layout.addWidget(self.cerebro_connect_btn,3,2,1,2)
         self.diode_power_left.add_to_grid(self.cerebro_layout,2)
-        self.diode_power_right.add_to_grid(self.cerebro_layout,2,2)
-        self.cerebro_layout.addWidget(self.cerebro_refresh_btn,3,3)
-        self.cerebro_layout.addWidget(self.battery_indicator,3,0,1,3)
-        self.cerebro_layout.addWidget(self.single_shot_radio,4,1)
-        self.cerebro_layout.addWidget(self.pulse_train_radio,4,2)
-        self.start_delay.add_to_grid(self.cerebro_layout,5,1)
-        self.on_time.add_to_grid(self.cerebro_layout,6)
-        self.off_time.add_to_grid(self.cerebro_layout,6,2)
-        self.ramp_dur.add_to_grid(self.cerebro_layout,7,1)
-        self.train_dur.add_to_grid(self.cerebro_layout,8,1)
-        self.cerebro_layout.addWidget(self.send_waveform_btn,9,1,1,2)
-        self.cerebro_layout.addWidget(self.test_btn,10,0,1,4)
+        self.diode_power_right.add_to_grid(self.cerebro_layout,3,0)
+        self.cerebro_layout.addWidget(self.battery_indicator,4,0,1,3)
+        self.cerebro_layout.addWidget(self.cerebro_refresh_btn,4,3)
+        self.cerebro_layout.addWidget(self.single_shot_radio,5,0)
+        self.cerebro_layout.addWidget(self.pulse_train_radio,5,1)
+        self.start_delay.add_to_grid(self.cerebro_layout,6,0)
+        self.on_time.add_to_grid(self.cerebro_layout,7,0)
+        self.off_time.add_to_grid(self.cerebro_layout,8,0)
+        self.ramp_dur.add_to_grid(self.cerebro_layout,9,0)
+        self.train_dur.add_to_grid(self.cerebro_layout,10,0)
+        self.cerebro_layout.addWidget(self.send_waveform_btn,10,2,1,2)
+        self.cerebro_layout.addWidget(self.test_btn,11,0,2,4)
         self.cerebro_group.setLayout(self.cerebro_layout)
 
         is_pulse_train = (eval(init_vars['pulse_train']))
         self.single_shot_radio.setChecked(not is_pulse_train)
         self.pulse_train_radio.setChecked(is_pulse_train)
         if is_pulse_train:
-            self.ramp_dur.setVisible(False)
+            self.ramp_dur.setEnabled(False)
         else:
-            self.off_time.setVisible(False)
-            self.train_dur.setVisible(False)
-
-
-
+            self.off_time.setEnabled(False)
+            self.train_dur.setEnabled(False)
 
         self.blink_base_btn.clicked.connect(self.blink_station)
         self.cerebro_connect_btn.clicked.connect(self.connect_to_cerebro)
@@ -582,13 +589,13 @@ class base_station():
 
     def update_cerebro_input(self):
         if self.pulse_train_radio.isChecked():
-            self.off_time.setVisible(True)
-            self.train_dur.setVisible(True)
-            self.ramp_dur.setVisible(False)
+            self.off_time.setEnabled(True)
+            self.train_dur.setEnabled(True)
+            self.ramp_dur.setEnabled(False)
         else:
-            self.off_time.setVisible(False)
-            self.train_dur.setVisible(False)
-            self.ramp_dur.setVisible(True)
+            self.off_time.setEnabled(False)
+            self.train_dur.setEnabled(False)
+            self.ramp_dur.setEnabled(True)
 
     def send_waveform_parameters(self):
         if self.board.framework_running: # Value returned later.
@@ -620,3 +627,31 @@ class base_station():
     def blink_station(self):
         self.board.blink_base()
         
+    def process_data(self,new_data):
+        for data_array in new_data:
+            if data_array[0]=='P': # printed miessage
+                data_chunks = data_array[2].split(',')
+                if data_chunks[0][0]=='[' and data_chunks[0][-1]==']': # is an incoming message from cerebro
+                    try:
+                        msg_type = data_chunks[1]
+                        if msg_type == 'Btry':
+                            self.update_battery_status(int(data_chunks[2]))
+                        elif msg_type == 'DP':
+                            left_pwr,right_pwr = data_chunks[2].split('-')
+                            if self.diode_power_left.spn.value() != int(left_pwr) or self.diode_power_right.spn.value() != int(right_pwr):
+                                self.diode_was_different = True
+                                QtCore.QTimer.singleShot(500, self.set_diode_powers)
+                            else:
+                                if self.diode_was_different:
+                                    QtCore.QTimer.singleShot(500, self.update_task_diode_powers)
+                                    self.diode_was_different = False
+                        elif msg_type == 'Wave':
+                            start_delay,on_time,off_time,train_dur,ramp_dur = data_chunks[2].split('-')
+                            if self.pulse_train_radio.isChecked():
+                                if self.start_delay.mills_str() != start_delay or self.on_time.mills_str() != on_time or  self.off_time.mills_str() != off_time or  self.train_dur.mills_str() != train_dur or ramp_dur != '0': 
+                                    QtCore.QTimer.singleShot(2500, self.send_waveform_parameters)
+                            else:
+                                if self.start_delay.mills_str() != start_delay or self.on_time.mills_str() != on_time or off_time != '0' or train_dur != '0' or self.ramp_dur.mills_str() != ramp_dur: 
+                                    QtCore.QTimer.singleShot(2500, self.send_waveform_parameters)
+                    except:
+                        print("bad chunk {}".format(data_chunks))
