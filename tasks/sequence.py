@@ -199,11 +199,9 @@ def updateHold():
         v.hold_center___ = v.time_hold_center
     else:
         v.hold_center___ = min(v.center_hold_start + v.trial_current_number___ * v.center_hold_increment, v.center_hold_max )
-    print(v.hold_center___)
 
 def updateSide():
     if v.side_delay_constant:
         v.side_delay___ = v.time_side_delay
     else:
         v.side_delay___ = min(v.side_delay_start + v.trial_current_number___ * v.side_delay_increment, v.side_delay_max )
-    print(v.side_delay___)
