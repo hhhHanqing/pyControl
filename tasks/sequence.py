@@ -31,21 +31,21 @@ v.sequence_index___ = -1
 ##### Configurable Variables #######
 
 ### Bout Variables
-v.sequence_array_text = "LLR-RRL-RLL"
-v.bout_mean = 12
-v.bout_sd = 4
+v.sequence_array_text = "LLR-RRL"
+v.bout_mean = 175
+v.bout_sd = 25
 v.trials_until_change = 0
 
 ### Reward Variables
 v.reward_seq___ = 'LLR'
 v.block_change_trial = 0
 v.correct_reward_rate = 0.9
-v.background_reward_rate = .05
+v.background_reward_rate = 0
 v.reward_volume = 250 # microliters
 
 ### Center Variables
 v.time_hold_center = 100 # milliseconds 
-v.time_forgive = 500
+v.time_forgive = 200
 v.center_hold_constant = True
 v.center_hold_start = 500
 v.center_hold_increment = 1
@@ -53,7 +53,7 @@ v.center_hold_max = 5000
 
 ### Side Variables
 v.time_blink = 100 # milliseconds
-v.time_side_delay = 1000 # milliseconds
+v.time_side_delay = 10 # milliseconds
 v.side_delay_constant = True
 v.side_delay_start = 500
 v.side_delay_increment = 1
