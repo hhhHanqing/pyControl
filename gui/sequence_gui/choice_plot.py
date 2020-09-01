@@ -87,7 +87,7 @@ class Sequence_Plot():
                     side = 0
                 self.last_choice = choice
 
-                if outcome == 'S': # was rewarded
+                if outcome == 'S' or outcome == 'W': # was rewarded
                     color = 0
                 elif outcome == 'N': # was not rewarded
                     color = 1

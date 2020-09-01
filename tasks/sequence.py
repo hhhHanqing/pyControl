@@ -1,4 +1,5 @@
 from pyControl.utility import *
+from pyControl.competitor import *
 import hardware_definition as hw
 
 states= [
@@ -71,6 +72,7 @@ v.ramp_dur = 0.3
 #Other variables
 v.current_sequence = '______' # up to 6 letter sequence
 initial_state = 'wait_for_center'
+competitor = Competitor()
 
 def run_start():
     start_new_block()
@@ -126,11 +128,13 @@ def wait_for_outcome(event):
             hw.Rpoke.LED.toggle()
         set_timer('blink_timer', v.time_blink)
     elif event == 'side_delay_timer': # side delay has expired, can now deliver reward and/or move on to next trial initiation
-        if v.outcome___ != 'N':
+        if v.outcome___ != 'N': 
             if withprob(v.correct_reward_rate):
+                print("rewarddeed")
+                print(v.correct_reward_rate)
                 giveReward(v.chosen_side___)
             else:
-                print('\t\tBAD LUCK')
+                v.outcome___ = 'W' # witheld
         goto_state('wait_for_center')
     elif event == 'C_nose': # abandon the choice (don't wait for outcome)
         v.abandoned___ = True
@@ -141,9 +145,37 @@ def wait_for_outcome(event):
         disarm_timer('blink_timer')
         disarm_timer('side_delay_timer')
         print('rslt,{},{},{},{},{},{},{},{}'.format(v.trial_current_number___,v.reward_seq___,v.background_reward_rate,v.chosen_side___,v.outcome___,v.abandoned___,v.hold_center___,v.side_delay___))
+        competitor.update_competitor(v.chosen_side___,v.outcome___)
         v.trials_until_change += -1
         if v.trials_until_change<=0:
             start_new_block()
+
+"""
+                                       Correct Sequence?
+                                               +
+                                               |
+                                       NO      |    YES
+          Predicted by Competitor? <-----------+----------->  Favorable outcome with
+                      +                                        "correct_reward_rate"
+                      |                                               +
+                      |                                               |
+            NO        |         YES                            NO     |     YES
+            +---------+-----------+                            +------+------+
+            |                     |                            |             |
+            v                     |                            |             |
+ Favorable outcome with           |                            |             |
+"background_reward_rate"          |                            |             |
+            +                     |                            |             |
+            |                     |                            |             |
+    NO      |      YES            |                            |             |
+    +-------+--------+            |                            |             |
+    |                |            |                            |             |
+    |                |            |                            |             |
+    v                v            v                            v             v
+
+   'N'              'B'          'N'                          'W'           'S'
+                  Rewarded                                                Rewarded
+"""
 
 def all_states(event):
     if event == 'check_serial':
@@ -193,12 +225,12 @@ def getOutcome(choice):
     updateSide()
 
     ## set outcome variable
+    v.outcome___ = 'N' # not rewarded
     if str(v.current_sequence[-len(v.reward_seq___):]) == str(v.reward_seq___):
         v.outcome___ = 'S' #reward from correct sequence
     elif withprob(v.background_reward_rate):
-        v.outcome___ = 'B' # reward from background
-    else:
-        v.outcome___ = 'N' # not rewarded
+        if choice != competitor.predict():
+            v.outcome___ = 'B' # reward from background for being unpredictable
     if v.chosen_side___ =='L':
         hw.Rpoke.LED.off()
     else:
@@ -209,10 +241,8 @@ def getOutcome(choice):
 def giveReward(side):
     if side =='R':
         hw.Rpump.infuse(v.reward_volume)
-        print('\t\tRIGHT REWARD')
     else:
         hw.Lpump.infuse(v.reward_volume)
-        print('\t\tLEFT REWARD')
 
 def updateHold():
     if v.center_hold_constant:
