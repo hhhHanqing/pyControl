@@ -41,7 +41,7 @@ v.reward_seq___ = 'LLR'
 v.block_change_trial = 0
 v.correct_reward_rate = 0.9
 v.background_reward_rate = 0
-v.reward_volume = 250 # microliters
+v.reward_volume = 400 # microliters
 
 ### Center Variables
 v.time_hold_center = 100 # milliseconds 
@@ -130,8 +130,6 @@ def wait_for_outcome(event):
     elif event == 'side_delay_timer': # side delay has expired, can now deliver reward and/or move on to next trial initiation
         if v.outcome___ != 'N': 
             if withprob(v.correct_reward_rate):
-                print("rewarddeed")
-                print(v.correct_reward_rate)
                 giveReward(v.chosen_side___)
             else:
                 v.outcome___ = 'W' # witheld
@@ -156,7 +154,7 @@ def wait_for_outcome(event):
                                                |
                                        NO      |    YES
           Predicted by Competitor? <-----------+----------->  Favorable outcome with
-                      +                                        "correct_reward_rate"
+                      +                                        "correct_reward_rate"?
                       |                                               +
                       |                                               |
             NO        |         YES                            NO     |     YES
@@ -164,7 +162,7 @@ def wait_for_outcome(event):
             |                     |                            |             |
             v                     |                            |             |
  Favorable outcome with           |                            |             |
-"background_reward_rate"          |                            |             |
+"background_reward_rate"?         |                            |             |
             +                     |                            |             |
             |                     |                            |             |
     NO      |      YES            |                            |             |
