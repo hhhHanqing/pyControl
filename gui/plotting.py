@@ -188,7 +188,7 @@ class States_plot():
         self.axis = pg.PlotWidget(title='States')
         self.axis.showAxis('right')
         self.axis.hideAxis('left')
-        self.axis.setRange(xRange=[-10.2, 0], padding=0)
+        self.axis.setRange(xRange=[-90*1.02,0], padding=0)
         self.axis.setMouseEnabled(x=True,y=False)
         self.axis.showGrid(x=True,alpha=0.75)
         self.axis.setLimits(xMax=0)

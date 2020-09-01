@@ -31,6 +31,8 @@ class Sequence_Plot():
         self.next_seq = ''
         self.bout_start_trial = 0
         self.next_block_start = 0
+
+        self.rewarded_trials = 0
         
         self.plot_widget.hideAxis('right')
         self.plot_widget.showAxis('left')
@@ -88,6 +90,7 @@ class Sequence_Plot():
                 self.last_choice = choice
 
                 if outcome == 'S' or outcome == 'W': # was rewarded
+                    self.rewarded_trials += 1
                     color = 0
                 elif outcome == 'N': # was not rewarded
                     color = 1
@@ -148,8 +151,12 @@ class Sequence_Plot():
             self.plot_widget.setRange(xRange=[self.trial_num-markov_plot_window,self.trial_num+5], padding=0)
 
     def update_title(self):
-        self.plot_widget.setTitle('<font size="4">{} Choices made --- Current Reward Sequence:{} --- Background Reward Rate: {}</font>'.format(
-            self.trial_num,self.create_color_string(self.reward_seq),self.background_reward))
+        if self.trial_num:
+            reward_percentage = round(self.rewarded_trials/self.trial_num*100,2)
+        else:
+            reward_percentage = 0
+        self.plot_widget.setTitle('<font size="4">{} Choices made --- {}% Rewarded --- Current Reward Sequence:{}</font>'.format(
+            self.trial_num,reward_percentage,self.create_color_string(self.reward_seq)))
         self.bout_text.setHtml('{} in {} trials'.format(self.create_color_string(self.next_seq),str(self.next_block_start - self.trial_num)))
         if self.label_new_bout:
             self.label_new_bout = False
