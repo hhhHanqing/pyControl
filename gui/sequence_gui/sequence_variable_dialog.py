@@ -1,5 +1,4 @@
 from gui.dialog_elements import *
-import re
 
 # Custom Variable dialog
 class Sequence_Variables_dialog(QtGui.QDialog):
@@ -36,32 +35,39 @@ class Sequence_GUI(QtGui.QWidget):
         left_align = QtCore.Qt.AlignLeft
 
         ##############  Sequence Scheduler ##############
-        self.sequence_group = QtGui.QGroupBox('Bout Variables')
+        self.sequence_widget = QtGui.QWidget()
         self.sequence_layout = QtGui.QGridLayout()
         # create widgets
-        self.reward_array = sequence_text_var(init_vars,'<b>Sequence Array</b>','sequence_array_text',text_width=150)
+        self.reward_array = sequence_text_var(init_vars,'<b>Sequence(s)</b>','sequence_array_text',text_width=150)
         self.bout_length = two_var(init_vars,'<b>Bout Length Distribution</b>','µ', 1,500,1,'','bout_mean','σ', 1,500,1,'','bout_sd')
         self.next_bout = spin_var(init_vars,'<b>Trials Until New Bout</b>', 1,500,1,'','trials_until_change')
         # place widgets
         for i,var in enumerate([self.reward_array,self.bout_length,self.next_bout]):
             var.setBoard(board)
             var.add_to_grid(self.sequence_layout,i)
-        self.sequence_group.setLayout(self.sequence_layout)
+
+        self.tone_enabled_lbl = QtGui.QLabel('<b>Tone Enabled</b>')
+        self.tone_enabled_lbl.setAlignment(QtCore.Qt.AlignRight)
+        self.tone_checkbox = QtGui.QCheckBox()
+        self.tone_checkbox.setChecked(eval(init_vars['tone_on']))
+        self.sequence_layout.addWidget(self.tone_enabled_lbl,i+1,0)
+        self.sequence_layout.addWidget(self.tone_checkbox,i+1,1)
+
+        self.sequence_widget.setLayout(self.sequence_layout)
 
         ############## Reward Variables ##############
-        self.reward_group = QtGui.QGroupBox('Reward Variables')
+        self.reward_widget = QtGui.QWidget()
         self.reward_layout = QtGui.QGridLayout()
         # create widgets
-        self.reward_vol = spin_var(init_vars,'💧<b>Reward Volume</b>', 1,500,25,' µL','reward_volume')
-        self.correct_rate = spin_var(init_vars,'✅<b>Correct Reward Rate</b>',0,1,.05,'','correct_reward_rate')
-        self.background_rate = spin_var(init_vars,'🎲<b>Background Reward Rate</b>',0,1,.05,'','background_reward_rate')
+        self.reward_vol = spin_var(init_vars,'<b>Reward Volume</b>', 1,500,25,' µL','reward_volume')
+        self.correct_rate = spin_var(init_vars,'<b>Correct Reward Rate</b>',0,1,.05,'','correct_reward_rate')
+        self.background_rate = spin_var(init_vars,'<b>Background Reward Rate</b>',0,1,.05,'','background_reward_rate')
         # place widgets
         for i,var in enumerate([self.reward_vol,self.correct_rate,self.background_rate]):
             var.setBoard(board)
             var.add_to_grid(self.reward_layout,i)
-        self.reward_group.setLayout(self.reward_layout)
+        self.reward_widget.setLayout(self.reward_layout)
 
-        self.center_side_tabs = QtGui.QTabWidget()
         
         ############## Center Variables #################################################################################3
         self.center_widget = QtGui.QWidget()
@@ -127,18 +133,24 @@ class Sequence_GUI(QtGui.QWidget):
         self.base_station = base_station(self.board,init_vars)
 
         ###### Place groups into layout ############
-        grid_layout.addWidget(self.sequence_group,0,0,left_align)
-        grid_layout.addWidget(self.reward_group,1,0,left_align)
-        self.center_side_tabs.addTab(self.center_widget,"Center Variables")
-        self.center_side_tabs.addTab(self.side_widget,"Side Variables")
-        grid_layout.addWidget(self.center_side_tabs,2,0,left_align)
-        grid_layout.addWidget(self.base_station.cerebro_group,3,0,left_align)
+        self.variable_tabs = QtGui.QTabWidget()
+        self.variable_tabs.addTab(self.sequence_widget,"Bout")
+        self.variable_tabs.addTab(self.reward_widget,"Reward")
+        self.variable_tabs.addTab(self.center_widget,"Center Hold")
+        self.variable_tabs.addTab(self.side_widget,"Side Delay")
+        self.variable_tabs.addTab(self.base_station.widget,"Cerebro")
+        grid_layout.addWidget(self.variable_tabs,0,0,left_align)
+
+        for layout in [self.sequence_layout,self.reward_layout,self.center_layout,self.side_layout,self.base_station.cerebro_layout]:
+            layout.setRowStretch(15,1)
+            layout.setColumnStretch(15,1)
         grid_layout.setRowStretch(10,1)
 
         self.constant_center_radio.clicked.connect(self.update_center)
         self.ramp_center_radio.clicked.connect(self.update_center)
         self.constant_side_radio.clicked.connect(self.update_side)
         self.ramp_side_radio.clicked.connect(self.update_side)
+        self.tone_checkbox.clicked.connect(self.update_tone)
 
     def update_center(self):
         self.show_center_options()
@@ -161,3 +173,7 @@ class Sequence_GUI(QtGui.QWidget):
         self.side_start.setEnabled(not self.constant_side_radio.isChecked())
         self.side_increment.setEnabled(not self.constant_side_radio.isChecked())
         self.side_max.setEnabled(not self.constant_side_radio.isChecked())
+
+    def update_tone(self):
+        if self.board.framework_running: # Value returned later.
+            self.board.set_variable('tone_on',self.tone_checkbox.isChecked()) 

@@ -1,4 +1,5 @@
 from pyqtgraph.Qt import QtGui, QtCore, QtWidgets
+import re
 
 class left_right_vars():
     def __init__(self,initial_vars_dict,label,min,max,step,suffix,varname=''):
@@ -494,7 +495,7 @@ class base_station():
 
 
         # create widgets 
-        self.cerebro_group = QtGui.QGroupBox('Cerebro')
+        self.widget = QtGui.QWidget()
         self.cerebro_layout = QtGui.QGridLayout()
         self.cerebro_channel = wave_var(init_vars,'<b>Cerebro Channel</b>',0,120,1,'')
         self.cerebro_channel.setBoard(board)
@@ -538,7 +539,7 @@ class base_station():
         self.train_dur.add_to_grid(self.cerebro_layout,10,0)
         self.cerebro_layout.addWidget(self.send_waveform_btn,10,2,1,2)
         self.cerebro_layout.addWidget(self.test_btn,11,0,2,4)
-        self.cerebro_group.setLayout(self.cerebro_layout)
+        self.widget.setLayout(self.cerebro_layout)
 
         is_pulse_train = (eval(init_vars['pulse_train']))
         self.single_shot_radio.setChecked(not is_pulse_train)

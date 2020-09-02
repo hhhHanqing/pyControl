@@ -385,9 +385,7 @@ class Subjectbox(QtGui.QGroupBox):
         self.subjectHeaderLayout.setColumnStretch(0,1)
         self.subjectHeaderLayout.setColumnStretch(5,1)
         self.subjectGridLayout.addLayout(self.subjectHeaderLayout,0,0,1,2)
-        self.subjectGridLayout.addWidget(self.tabs,1,0,1,2)
-        self.logTab.layout.addWidget(self.log_textbox)
-        self.logTab.setLayout(self.logTab.layout)
+        self.subjectGridLayout.addWidget(self.log_textbox,1,0,1,2)
         
     def print_to_log(self, print_string, end='\n'):
         self.log_textbox.moveCursor(QtGui.QTextCursor.End)
@@ -404,9 +402,9 @@ class Subjectbox(QtGui.QGroupBox):
         else:
             self.variables_dialog = Variables_dialog(self, self.board)
         self.board.data_logger.data_consumers.append(self.variables_dialog)
-        # self.variables_box= QtGui.QGroupBox('Variables')
-        self.varTab.setLayout(self.variables_dialog.layout)
-        # self.subjectGridLayout.addWidget(self.variables_box,1,1)
+        self.variables_box= QtGui.QGroupBox('Variables')
+        self.variables_box.setLayout(self.variables_dialog.layout)
+        self.subjectGridLayout.addWidget(self.variables_box,2,0,1,2)
         self.start_stop_button.clicked.connect(self.start_stop_rig)
 
     def start_stop_rig(self):

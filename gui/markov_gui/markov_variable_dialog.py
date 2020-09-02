@@ -36,7 +36,7 @@ class Markov_GUI(QtGui.QWidget):
         left_align = QtCore.Qt.AlignLeft
         ###### Left and Right Group #######
         # create widgets 
-        self.left_right_box = QtGui.QGroupBox('Left and Right Variables')
+        self.left_right_widget = QtGui.QWidget()
         self.left_right_layout = QtGui.QGridLayout()
         self.left_lbl = QtGui.QLabel('<b>Left</b>')
         self.left_lbl.setAlignment(center_align)
@@ -53,12 +53,12 @@ class Markov_GUI(QtGui.QWidget):
             var.setBoard(board)
             row = i+1
             var.add_to_grid(self.left_right_layout,row)
-        self.left_right_box.setLayout(self.left_right_layout)
+        self.left_right_widget.setLayout(self.left_right_layout)
         
 
         ###### Other Variables Group #######
         # create widgets 
-        self.other_box = QtGui.QGroupBox('Other Variables')
+        self.other_widget = QtGui.QWidget()
         self.other_layout = QtGui.QGridLayout()
         self.speaker_volume = spin_var(init_vars,'🔈 <b>Speaker Volume</b>',1,31,1,'','speaker_volume')
         self.error_duration = spin_var(init_vars,'❌ <b>Error Duration</b>', .5,120,.5,' s','time_error_freeze_seconds')
@@ -76,12 +76,12 @@ class Markov_GUI(QtGui.QWidget):
         for i,var in enumerate([self.tone_duration,self.error_duration,self.tone_repeats,self.trial_new_block,self.speaker_volume]):
             var.setBoard(board)
             var.add_to_grid(self.other_layout,i+1)
-        self.other_box.setLayout(self.other_layout)
+        self.other_widget.setLayout(self.other_layout)
         self.tone_checkbox.clicked.connect(self.update_tone)
 
         ###### Laser Group #######
         # create widgets 
-        self.laser_group = QtGui.QGroupBox('Laser Variables')
+        self.laser_widget = QtGui.QWidget()
         self.laser_layout = QtGui.QGridLayout()
         self.laser_enabled_lbl = QtGui.QLabel('<b>Laser Enabled</b>')
         self.laser_enabled_lbl.setAlignment(QtCore.Qt.AlignRight)
@@ -111,16 +111,23 @@ class Markov_GUI(QtGui.QWidget):
         self.laser_layout.addWidget(self.with_tone,1,1)
         self.laser_layout.addWidget(self.with_collection,1,2,1,2)
         self.laser_probability.add_to_grid(self.laser_layout,2)
-        self.laser_group.setLayout(self.laser_layout)
+        self.laser_widget.setLayout(self.laser_layout)
 
         ########################## Base Station #############################3
         self.base_station = base_station(self.board,init_vars)
 
-        grid_layout.addWidget(self.left_right_box,0,0,1,4,left_align)
-        grid_layout.addWidget(self.other_box,1,0,1,3,left_align)
-        grid_layout.addWidget(self.laser_group,2,0,1,2,left_align)
-        grid_layout.addWidget(self.base_station.cerebro_group,3,0,left_align)
-        grid_layout.setRowStretch(10,1)
+        self.variable_tabs = QtGui.QTabWidget()
+        grid_layout.addWidget(self.variable_tabs,0,0,left_align)
+        self.variable_tabs.addTab(self.left_right_widget,"Left/Right")
+        self.variable_tabs.addTab(self.other_widget,"Other")
+        self.variable_tabs.addTab(self.laser_widget,"Laser")
+        self.variable_tabs.addTab(self.base_station.widget,"Cerebro")
+
+
+        for layout in [self.left_right_layout,self.other_layout,self.laser_layout,self.base_station.cerebro_layout]:
+            layout.setRowStretch(15,1)
+            layout.setColumnStretch(15,1)
+        grid_layout.setRowStretch(15,1)
 
         self.laser_checkbox.clicked.connect(self.update_laser)
         self.with_tone.clicked.connect(self.update_laser)

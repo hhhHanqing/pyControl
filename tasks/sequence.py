@@ -35,6 +35,7 @@ v.sequence_array_text = "LLR-RRL"
 v.bout_mean = 175
 v.bout_sd = 25
 v.trials_until_change = 0
+v.tone_on = True
 
 ### Reward Variables
 v.reward_seq___ = 'LLR'
@@ -101,7 +102,8 @@ def wait_for_center(event):
         if v.in_center___:
             goto_state('wait_for_choice')
     elif event == 'exit':
-        hw.Speakers.beep()
+        if v.tone_on:
+            hw.Speakers.beep()
 
 def wait_for_choice(event):
     if event == 'entry':
@@ -114,7 +116,8 @@ def wait_for_choice(event):
     elif event == 'L_nose':
         getOutcome('L')
     elif event == 'exit':
-        hw.Speakers.beep()
+        if v.tone_on:
+            hw.Speakers.beep()
 
 def wait_for_outcome(event):
     if event == 'entry':
