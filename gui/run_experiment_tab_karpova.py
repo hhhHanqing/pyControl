@@ -447,6 +447,7 @@ class Subjectbox(QtGui.QGroupBox):
         self.start_stop_button.setVisible(False)
         for widget in (self.boxTitle, self.time_label, self.time_text, self.varTab):
             widget.setEnabled(False)
+        self.variables_box.setEnabled(False)
         self.boxTitle.setStyleSheet("font:15pt;color:grey;")
         
         if self.parent_telegram:

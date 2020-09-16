@@ -63,11 +63,14 @@ class left_right_vars():
             self.right_spn.setValue(self.board.get_variable(self.rightVar))
 
     def set(self):
+        self.board.set_variable(self.leftVar,round(self.left_spn.value(),2))
+        self.board.set_variable(self.rightVar,round(self.right_spn.value(),2))
         if self.board.framework_running: # Value returned later.
-            self.board.set_variable(self.leftVar,round(self.left_spn.value(),2))
-            self.board.set_variable(self.rightVar,round(self.right_spn.value(),2))
             QtCore.QTimer.singleShot(200, self.reload)
         else: # Value returned immediately.
+            msg = QtGui.QMessageBox()
+            msg.setText("Variable Changed")
+            msg.exec()
             self.left_spn.setValue(self.board.get_variable(self.leftVar))
             self.right_spn.setValue(self.board.get_variable(self.rightVar))
 
@@ -135,10 +138,13 @@ class spin_var():
             self.spn.setValue(self.board.get_variable(self.varname))
 
     def set(self):
+        self.board.set_variable(self.varname,round(self.spn.value(),2))
         if self.board.framework_running: # Value returned later.
-            self.board.set_variable(self.varname,round(self.spn.value(),2))
             QtCore.QTimer.singleShot(200, self.reload)
         else: # Value returned immediately.
+            msg = QtGui.QMessageBox()
+            msg.setText("Variable Changed")
+            msg.exec()
             self.spn.setValue(self.board.get_variable(self.varname))
     
     def reload(self):
@@ -243,11 +249,14 @@ class two_var():
             self.spn2.setValue(self.board.get_variable(self.varname2))
 
     def set(self):
+        self.board.set_variable(self.varname,round(self.spn.value(),2))
+        self.board.set_variable(self.varname2,round(self.spn2.value(),2))
         if self.board.framework_running: # Value returned later.
-            self.board.set_variable(self.varname,round(self.spn.value(),2))
-            self.board.set_variable(self.varname2,round(self.spn2.value(),2))
             QtCore.QTimer.singleShot(200, self.reload)
         else: # Value returned immediately.
+            msg = QtGui.QMessageBox()
+            msg.setText("Variables Changed")
+            msg.exec()
             self.spn.setValue(self.board.get_variable(self.varname))
             self.spn2.setValue(self.board.get_variable(self.varname2))
     
@@ -316,10 +325,13 @@ class text_var():
             self.line_edit.setText(self.board.get_variable(self.varname))
 
     def set(self):
+        self.board.set_variable(self.varname,self.line_edit.text().upper())
         if self.board.framework_running: # Value returned later.
-            self.board.set_variable(self.varname,self.line_edit.text().upper())
             QtCore.QTimer.singleShot(200, self.reload)
         else: # Value returned immediately.
+            msg = QtGui.QMessageBox()
+            msg.setText("Variable Changed")
+            msg.exec()
             self.line_edit.setText(self.board.get_variable(self.varname))
     
     def reload(self):
@@ -329,32 +341,36 @@ class text_var():
 
 class sequence_text_var(text_var):
     def set(self):
-        if self.board.framework_running: # Value returned later.
-            # can't be blank/
-            # only lrLR-
-            good_letters = re.compile('[^lrLR-]')
-            single_dashes = re.compile('[-]{2,}') # single dashes only
-            new_sequence_string = self.line_edit.text()
-            if good_letters.search(new_sequence_string) == None:
-                if single_dashes.search(new_sequence_string):
-                    msg = QtGui.QMessageBox()
-                    msg.setIcon(QtGui.QMessageBox.Warning)
-                    msg.setText("Invalid Input")
-                    msg.setInformativeText("There is more than 1 \"-\" somehwere")
-                    msg.setWindowTitle("Input Error")
-                    msg.exec()
-                else:
-                    self.board.set_variable(self.varname,self.line_edit.text().upper())
-                    QtCore.QTimer.singleShot(200, self.reload)
-            else:
+        # if self.board.framework_running: # Value returned later.
+        # can't be blank/
+        # only lrLR-
+        good_letters = re.compile('[^lrLR-]')
+        single_dashes = re.compile('[-]{2,}') # single dashes only
+        new_sequence_string = self.line_edit.text()
+        if good_letters.search(new_sequence_string) == None:
+            if single_dashes.search(new_sequence_string):
                 msg = QtGui.QMessageBox()
                 msg.setIcon(QtGui.QMessageBox.Warning)
                 msg.setText("Invalid Input")
-                msg.setInformativeText('Sequences can only be made up of letters \"L\" and \"R\" and should be separated by a single \"-\"')
+                msg.setInformativeText("There is more than 1 \"-\" somehwere")
                 msg.setWindowTitle("Input Error")
                 msg.exec()
-        else: # Value returned immediately.
-            self.line_edit.setText(self.board.get_variable(self.varname))
+            else:
+                self.board.set_variable(self.varname,self.line_edit.text().upper())
+                if self.board.framework_running:
+                    QtCore.QTimer.singleShot(200, self.reload)
+                else:
+                    msg = QtGui.QMessageBox()
+                    msg.setText("Variable Changed")
+                    msg.exec()
+                    self.line_edit.setText(self.board.get_variable(self.varname))
+        else:
+            msg = QtGui.QMessageBox()
+            msg.setIcon(QtGui.QMessageBox.Warning)
+            msg.setText("Invalid Input")
+            msg.setInformativeText('Sequences can only be made up of letters \"L\" and \"R\".\n\nEach sequence should be separated using a single \"-\"')
+            msg.setWindowTitle("Input Error")
+            msg.exec()
 
 
 class wave_var():
@@ -388,9 +404,9 @@ class wave_var():
         grid.addWidget(self.label,row,0+col_offset)
         grid.addWidget(self.spn,row,1+col_offset)
 
-    def setVisible(self,makeVisible):
-        self.label.setVisible(makeVisible)
-        self.spn.setVisible(makeVisible)
+    # def setVisible(self,makeVisible):
+    #     self.label.setVisible(makeVisible)
+    #     self.spn.setVisible(makeVisible)
     
     def setEnabled(self,enable):
         self.label.setEnabled(enable)
@@ -399,24 +415,24 @@ class wave_var():
     def setBoard(self,board):
         self.board = board
 
-    def get(self):
-        if self.board.framework_running: # Value returned later.
-            self.board.get_variable(self.varname)
-            QtCore.QTimer.singleShot(200, self.reload)
-        else: # Value returned immediately.
-            self.spn.setValue(self.board.get_variable(self.varname))
+    # def get(self):
+    #     if self.board.framework_running: # Value returned later.
+    #         self.board.get_variable(self.varname)
+    #         QtCore.QTimer.singleShot(200, self.reload)
+    #     else: # Value returned immediately.
+    #         self.spn.setValue(self.board.get_variable(self.varname))
 
-    def set(self):
-        if self.board.framework_running: # Value returned later.
-            self.board.set_variable(self.varname,round(self.spn.value(),2))
-            QtCore.QTimer.singleShot(200, self.reload)
-        else: # Value returned immediately.
-            self.spn.setValue(self.board.get_variable(self.varname))
+    # def set(self):
+    #     self.board.set_variable(self.varname,round(self.spn.value(),2))
+    #     if self.board.framework_running: # Value returned later.
+    #         QtCore.QTimer.singleShot(200, self.reload)
+    #     else: # Value returned immediately.
+    #         self.spn.setValue(self.board.get_variable(self.varname))
     
-    def reload(self):
-        '''Reload value from sm_info.  sm_info is updated when variables are output
-        during framework run due to get/set.'''
-        self.spn.setValue(eval(str(self.board.sm_info['variables'][self.varname])))
+    # def reload(self):
+    #     '''Reload value from sm_info.  sm_info is updated when variables are output
+    #     during framework run due to get/set.'''
+    #     self.spn.setValue(eval(str(self.board.sm_info['variables'][self.varname])))
 
 
 class single_var():
@@ -475,10 +491,13 @@ class single_var():
             self.spn.setValue(self.board.get_variable(self.varname))
 
     def set(self):
+        self.board.set_variable(self.varname,round(self.spn.value(),2))
         if self.board.framework_running: # Value returned later.
-            self.board.set_variable(self.varname,round(self.spn.value(),2))
             QtCore.QTimer.singleShot(200, self.reload)
         else: # Value returned immediately.
+            msg = QtGui.QMessageBox()
+            msg.setText("Variable Changed")
+            msg.exec()
             self.spn.setValue(self.board.get_variable(self.varname))
     
     def reload(self):
@@ -488,7 +507,6 @@ class single_var():
 
 
 class base_station():
-
     def __init__(self,board,init_vars):
         self.board = board
         self.diode_was_different=False
