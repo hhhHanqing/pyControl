@@ -1,7 +1,7 @@
 # Choice Plot --------------------------------------------------------
 import pyqtgraph as pg
 import numpy as np
-from config.gui_settings import markov_history_len,markov_plot_window
+from config.gui_settings import choice_history_len,choice_plot_window,choice_plot_look_ahead
 from PyQt5.QtCore import Qt
 
 class Sequence_Plot():
@@ -26,7 +26,6 @@ class Sequence_Plot():
     def setup_plot_widget(self):
         self.last_choice = ''
         self.reward_seq = ''
-        self.background_reward = ''
         self.label_new_bout = False
         self.next_seq = ''
         self.bout_start_trial = 0
@@ -36,7 +35,7 @@ class Sequence_Plot():
         
         self.plot_widget.hideAxis('right')
         self.plot_widget.showAxis('left')
-        self.plot_widget.setRange(xRange=[-1,markov_plot_window+10], padding=0)
+        self.plot_widget.setRange(xRange=[-1,choice_plot_window+choice_plot_look_ahead], padding=0)
         self.plot_widget.setMouseEnabled(x=True,y=False)
         self.plot_widget.showGrid(x=True,alpha=0.75)
         self.plot_widget.setLimits(xMin=-1)
@@ -70,8 +69,7 @@ class Sequence_Plot():
             n_new = len(outcome_msgs)
             self.data = np.roll(self.data, -n_new, axis=0)
             for i, ne in enumerate(outcome_msgs):
-                trial_num_string,self.reward_seq,background_reward_str,choice,outcome,abandoned,center_hold,side_delay= ne[-1].split(',')[1:]
-                self.background_reward = float(background_reward_str)
+                trial_num_string,self.reward_seq,choice,outcome,abandoned,reward_vol,center_hold,side_delay = ne[-1].split(',')[1:]
                 self.trial_num = int(trial_num_string)
                 if choice == 'L':
                     if self.last_choice == 'L':
@@ -89,10 +87,10 @@ class Sequence_Plot():
                     side = 0
                 self.last_choice = choice
 
-                if outcome == 'S' or outcome == 'W': # was rewarded
+                if outcome == 'C' or outcome == 'W': # was rewarded
                     self.rewarded_trials += 1
                     color = 0
-                elif outcome == 'N': # was not rewarded
+                elif outcome == 'N' or outcome == 'P': # was not rewarded
                     color = 1
                 elif outcome == 'B': # background reward
                     color = 2
@@ -114,7 +112,7 @@ class Sequence_Plot():
             symbolBrush=[self.my_colors[int(ID)] for ID in self.data[:,2]])
             self.update_title()
             if self.do_update:
-                self.plot_widget.setRange(xRange=[self.trial_num-markov_plot_window,self.trial_num+5], padding=0)
+                self.plot_widget.setRange(xRange=[self.trial_num-choice_plot_window,self.trial_num+choice_plot_look_ahead], padding=0)
         if new_block_msgs:
             for nb_msg in new_block_msgs:
                 # label old bout change
@@ -148,7 +146,7 @@ class Sequence_Plot():
     def toggle_update(self):
         self.do_update = not self.do_update
         if self.do_update:
-            self.plot_widget.setRange(xRange=[self.trial_num-markov_plot_window,self.trial_num+5], padding=0)
+            self.plot_widget.setRange(xRange=[self.trial_num-choice_plot_window,self.trial_num+choice_plot_look_ahead], padding=0)
 
     def update_title(self):
         if self.trial_num:

@@ -5,7 +5,7 @@ import pyqtgraph as pg
 from pyqtgraph.Qt import QtGui, QtWidgets
 from PyQt5.QtCore import Qt
 
-from config.gui_settings import event_history_len, state_history_len, analog_history_dur, markov_history_len,markov_plot_window
+from config.gui_settings import event_history_len, state_history_len, analog_history_dur, choice_history_len,choice_plot_window
 from gui.utility import detachableTabWidget
 from gui.markov_gui.choice_plot import *
 from gui.sequence_gui.choice_plot import *
@@ -21,7 +21,7 @@ class Task_plot(QtGui.QWidget):
         super(QtGui.QWidget, self).__init__(parent)
 
         # Create widgets
-        self.choice_plot = Choice_plot(self, data_len=markov_history_len)
+        self.choice_plot = Choice_plot(self, data_len=choice_history_len)
         self.markov_plot = Markov_Plot(self.choice_plot.plot_widget)
         self.sequence_plot =Sequence_Plot(self.choice_plot.plot_widget)
         self.states_plot = States_plot(self, data_len=state_history_len)
@@ -29,7 +29,7 @@ class Task_plot(QtGui.QWidget):
         self.analog_plot = Analog_plot(self, data_dur=analog_history_dur)
         self.run_clock   = Run_clock(self.states_plot.axis)
 
-        self.choice_update_checkbox = QtWidgets.QCheckBox('Keep last {} trials in view'.format(markov_plot_window))
+        self.choice_update_checkbox = QtWidgets.QCheckBox('Keep last {} trials in view'.format(choice_plot_window))
         self.choice_update_checkbox.setChecked(True)
         self.choice_update_checkbox.setEnabled(False)
 

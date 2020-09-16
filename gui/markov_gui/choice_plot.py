@@ -1,7 +1,7 @@
 # Choice Plot --------------------------------------------------------
 import pyqtgraph as pg
 import numpy as np
-from config.gui_settings import markov_history_len,markov_plot_window
+from config.gui_settings import choice_history_len,choice_plot_window,choice_plot_look_ahead
 
 class Markov_Plot():
     def __init__(self, parent_plot, data_len=100):
@@ -27,7 +27,7 @@ class Markov_Plot():
     def setup_plot_widget(self):
         self.plot_widget.hideAxis('right')
         self.plot_widget.showAxis('left')
-        self.plot_widget.setRange(xRange=[-1,markov_plot_window+5], padding=0)
+        self.plot_widget.setRange(xRange=[-1,choice_plot_window+choice_plot_look_ahead], padding=0)
         self.plot_widget.setMouseEnabled(x=True,y=False)
         self.plot_widget.showGrid(x=True,alpha=0.75)
         self.plot_widget.setLimits(xMin=-1)
@@ -103,7 +103,7 @@ class Markov_Plot():
             self.plot3.setData(self.data[:,0],self.data[:,5])
             self.update_title()
             if self.do_update:
-                self.plot_widget.setRange(xRange=[self.trial_num-markov_plot_window,self.trial_num+5], padding=0)
+                self.plot_widget.setRange(xRange=[self.trial_num-choice_plot_window,self.trial_num+choice_plot_look_ahead], padding=0)
         if new_block_msgs:
             for nb_msg in new_block_msgs:
                 content = nb_msg[2].split(',')
@@ -131,7 +131,7 @@ class Markov_Plot():
     def toggle_update(self):
         self.do_update = not self.do_update
         if self.do_update:
-            self.plot_widget.setRange(xRange=[self.trial_num-markov_plot_window,self.trial_num+5], padding=0)
+            self.plot_widget.setRange(xRange=[self.trial_num-choice_plot_window,self.trial_num+choice_plot_look_ahead], padding=0)
 
     def update_title(self):
         self.plot_widget.setTitle('<font size="4"><span>Completed {} trials---Current Probabilities: </span><span style="color: #FF9A00;">Left={}</span><span style="color: #00DEFF;"> Right={}</span>---New Block in {} trials (@ trial <span style="color:#FF1FE6;">{}</span></font>)'.format(
