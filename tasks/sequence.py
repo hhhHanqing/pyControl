@@ -1,7 +1,7 @@
 from pyControl.utility import *
 from pyControl.competitor import *
 import hardware_definition as hw
-version = 2020091500 ## YearMonthDayRevision YYYYMMDDrr  can have up to 100 revisions/day
+version = 2020091600 ## YearMonthDayRevision YYYYMMDDrr  can have up to 100 revisions/day
 states= [
     'wait_for_center',
     'wait_for_choice',
@@ -151,7 +151,7 @@ def wait_for_outcome(event):
     elif event == 'exit':
         disarm_timer('blink_timer')
         disarm_timer('side_delay_timer')
-        print('rslt,{},{},{},{},{},{},{},{}'.format(v.trial_current_number___,v.reward_seq___,v.chosen_side___,v.outcome___,v.abandoned___,v.reward_volume,v.time_hold_center,v.time_side_delay))
+        print('rslt,{},{},{},{},{},{},{},{}'.format(v.trial_current_number___,v.reward_seq___,v.chosen_side___,v.outcome___,int(v.abandoned___),v.reward_volume,v.time_hold_center,v.time_side_delay))
         if v.abandoned___:
             competitor.update_competitor(v.chosen_side___,False)
         else:

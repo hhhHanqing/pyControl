@@ -54,6 +54,8 @@ class Session():
 
         self.experiment_name = next(line for line in info_lines if 'Experiment name' in line).split(' : ')[1]
         self.task_name       = next(line for line in info_lines if 'Task name'       in line).split(' : ')[1]
+        self.task_hash       = next(line for line in info_lines if 'Task file hash'  in line).split(' : ')[1]
+        self.setup_ID        = next(line for line in info_lines if 'Setup ID'        in line).split(' : ')[1]
         subject_ID_string    = next(line for line in info_lines if 'Subject ID'      in line).split(' : ')[1]
         datetime_string      = next(line for line in info_lines if 'Start date'      in line).split(' : ')[1]
 
