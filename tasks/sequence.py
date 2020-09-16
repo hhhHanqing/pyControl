@@ -1,7 +1,7 @@
 from pyControl.utility import *
 from pyControl.competitor import *
 import hardware_definition as hw
-
+version = 2020091500 ## YearMonthDayRevision YYYYMMDDrr  can have up to 100 revisions/day
 states= [
     'wait_for_center',
     'wait_for_choice',
@@ -9,9 +9,9 @@ states= [
     ]
 
 events = [
-    'R_nose',
+    'L_nose','L_nose_out',
     'C_nose','C_nose_out',
-    'L_nose',
+    'R_nose','R_nose_out',
     'center_hold_timer',
     'forgive_timer',
     'blink_timer',
@@ -76,6 +76,10 @@ initial_state = 'wait_for_center'
 competitor = Competitor()
 
 def run_start():
+    print("Task_Version,{}".format(version))
+    for key in v.__dict__.keys():
+        print("{},{}".format(key,getattr(v,key))) 
+    print("Variables_End,~~~~~")
     start_new_block()
     hw.Speakers.set_volume(30)
     updateHold()
@@ -131,11 +135,13 @@ def wait_for_outcome(event):
             hw.Rpoke.LED.toggle()
         set_timer('blink_timer', v.time_blink)
     elif event == 'side_delay_timer': # side delay has expired, can now deliver reward and/or move on to next trial initiation
-        if v.outcome___ != 'N': 
+        if v.outcome___ == 'C':
             if withprob(v.correct_reward_rate):
                 giveReward(v.chosen_side___)
             else:
                 v.outcome___ = 'W' # witheld
+        elif v.outcome___ == 'B':
+            giveReward(v.chosen_side___)
         goto_state('wait_for_center')
     elif event == 'C_nose': # abandon the choice (don't wait for outcome)
         v.abandoned___ = True
@@ -145,37 +151,52 @@ def wait_for_outcome(event):
     elif event == 'exit':
         disarm_timer('blink_timer')
         disarm_timer('side_delay_timer')
-        print('rslt,{},{},{},{},{},{},{},{}'.format(v.trial_current_number___,v.reward_seq___,v.background_reward_rate,v.chosen_side___,v.outcome___,v.abandoned___,v.hold_center___,v.side_delay___))
-        competitor.update_competitor(v.chosen_side___,v.outcome___)
+        print('rslt,{},{},{},{},{},{},{},{}'.format(v.trial_current_number___,v.reward_seq___,v.chosen_side___,v.outcome___,v.abandoned___,v.reward_volume,v.time_hold_center,v.time_side_delay))
+        if v.abandoned___:
+            competitor.update_competitor(v.chosen_side___,False)
+        else:
+            competitor.update_competitor(v.chosen_side___,v.outcome___)
         v.trials_until_change += -1
         if v.trials_until_change<=0:
             start_new_block()
 
 """
-                                       Correct Sequence?
-                                               +
-                                               |
-                                       NO      |    YES
-          Predicted by Competitor? <-----------+----------->  Favorable outcome with
-                      +                                        "correct_reward_rate"?
-                      |                                               +
-                      |                                               |
-            NO        |         YES                            NO     |     YES
-            +---------+-----------+                            +------+------+
-            |                     |                            |             |
-            v                     |                            |             |
- Favorable outcome with           |                            |             |
-"background_reward_rate"?         |                            |             |
-            +                     |                            |             |
-            |                     |                            |             |
-    NO      |      YES            |                            |             |
-    +-------+--------+            |                            |             |
-    |                |            |                            |             |
-    |                |            |                            |             |
-    v                v            v                            v             v
+There are 2 general outcomes, rewarded or not rewarded.
+There are 5 different paths for arriving at those outcomes.
+Below is the decision tree and descriptions of the 5 paths.
 
-   'N'              'B'          'N'                          'W'           'S'
-                  Rewarded                                                Rewarded
+
+                               Correct Sequence?
+                                       +
+                                       |
+                                 NO    |    YES
+ Favorable outcome with    <-----------+----------->  Favorable outcome with
+"background_reward_rate"?                              "correct_reward_rate"?
+             +                                                  +
+             |                                                  |
+   NO        |         YES                             NO       |       YES
+   +---------+-----------+                             +--------+---------+
+   |                     |                             |                  |
+   |                     |                             |                  |
+   |                     v                             |                  |
+   |         Predicted by competitor?                  |                  |
+   |                     +                             |                  |
+   |                     |                             |                  |
+   |             NO      |      YES                    |                  |
+   |             +-------+--------+                    |                  |
+   |             |                |                    |                  |
+   |             |                |                    |                  |
+   v             v                v                    v                  v
+
+  'N'           'B'              'P'                  'W'                'C'
+              Rewarded                                                 Rewarded
+
+N: not rewarded
+B: background rewarded
+P: predicted
+W: withheld
+C: correct choice rewarded
+
 """
 
 def all_states(event):
@@ -228,9 +249,11 @@ def getOutcome(choice):
     ## set outcome variable
     v.outcome___ = 'N' # not rewarded
     if str(v.current_sequence[-len(v.reward_seq___):]) == str(v.reward_seq___):
-        v.outcome___ = 'S' #reward from correct sequence
+        v.outcome___ = 'C' #reward from correct sequence
     elif withprob(v.background_reward_rate):
-        if choice != competitor.predict():
+        if choice == competitor.predict():
+            v.outcome___ = 'P' # predicted
+        else:
             v.outcome___ = 'B' # reward from background for being unpredictable
     if v.chosen_side___ =='L':
         hw.Rpoke.LED.off()

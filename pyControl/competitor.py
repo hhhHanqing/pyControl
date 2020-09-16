@@ -39,7 +39,7 @@ class Competitor():
 
         self.choice_history = self.choice_history[1:] #trim first trial
         
-        if reward == "B" or reward =="S":
+        if reward == "B" or reward =="C":
             self.reward_history.append(1)
         else:
             self.reward_history.append(0)
