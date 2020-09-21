@@ -12,7 +12,7 @@ dirs = {
         'tasks'       : os.path.join(top_dir, 'tasks'), 
         'experiments' : os.path.join(top_dir, 'experiments'),
         'data'        : os.path.join(top_dir, 'data'),
-        'network_dir' : 'Z:\data\Behavior\Raw\pyControlData\Markov_Training'
+        'network_dir' : 'Z:\data\Behavior\Raw\pyControlData'
         }
 
 # User paths - When paths.py is imported on opening GUI, load any 

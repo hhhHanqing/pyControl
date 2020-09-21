@@ -9,7 +9,6 @@ cleaner_version = 2020091600 ## YearMonthDayRevision YYYYMMDDrr  can have up to 
 class Log_cleaner():
     def __init__(self,file_path):
         self.txt_file = file_path
-        self.folder_path = dirs['network_dir'] 
 
         session = di.Session(self.txt_file)
         self.session = session
@@ -22,20 +21,26 @@ class Log_cleaner():
 
         self.print_data = pd.DataFrame(session.print_lines[i+1:])
 
+        if self.session.task_name == 'sequence':
+            print('session is seqence andy!')
+            self.data_folder_path = '{}\{}'.format(dirs['network_dir'],"Sequence_Training")
+        else:
+            self.data_folder_path = '{}\{}'.format(dirs['network_dir'],"Markov_Training")
+
     def clean(self):
         self.create_folders()
         self.create_dataframes(self.session.task_name)
         self.expand_results()
         self.create_html_table()
         # self.create_bokeh_graph()
-        saveName = '{}/{}/tables/{}_table.html'.format(self.folder_path,self.session.subject_ID,self.session_name)
+        saveName = '{}/{}/tables/{}_table.html'.format(self.data_folder_path,self.session.subject_ID,self.session_name)
         self.save_json(saveName)
         self.move_raw_txtfile()
 
     def create_folders(self):
         rat = self.session.subject_ID
         try:
-            os.mkdir('{}/{}'.format(self.folder_path,rat)) #make directory if it doesn't already exist
+            os.mkdir('{}/{}'.format(self.data_folder_path,rat)) #make directory if it doesn't already exist
             print('made new directory')
         except:
             pass
@@ -44,7 +49,7 @@ class Log_cleaner():
 
         for fn in folder_names:
             try:
-                newFolder = '{}/{}/{}'.format(self.folder_path,rat,fn)
+                newFolder = '{}/{}/{}'.format(self.data_folder_path,rat,fn)
                 os.mkdir(newFolder)
                 print('Created {}/{}'.format(rat,fn))
             except:
@@ -305,7 +310,7 @@ class Log_cleaner():
         select.add_tools(range_tool)
         select.toolbar.active_multi = range_tool
 
-        bk.output_file('{}/{}/bokeh_plots/{}_plots.html'.format(self.folder_path,self.session.subject_ID,self.session_name))
+        bk.output_file('{}/{}/bokeh_plots/{}_plots.html'.format(self.data_folder_path,self.session.subject_ID,self.session_name))
         bk.save(column(p,probabilities,select))
 
     def save_json(self):
@@ -330,7 +335,7 @@ class Log_cleaner():
 
         json_dictionary['Session_info'] = session_dict   
             
-        saveName = '{}/{}/outcome_data/{}.json'.format(self.folder_path,self.session.subject_ID,self.session_name)
+        saveName = '{}/{}/outcome_data/{}.json'.format(self.data_folder_path,self.session.subject_ID,self.session_name)
         with open(saveName,'w') as f:
             json.dump(json_dictionary,f)
 
@@ -338,5 +343,5 @@ class Log_cleaner():
 
     def move_raw_txtfile(self):
         import shutil
-        text_in_raw_folder = '{}/{}/raw/{}.txt'.format(self.folder_path,self.session.subject_ID,self.session_name)
+        text_in_raw_folder = '{}/{}/raw/{}.txt'.format(self.data_folder_path,self.session.subject_ID,self.session_name)
         shutil.move(self.txt_file,text_in_raw_folder)
