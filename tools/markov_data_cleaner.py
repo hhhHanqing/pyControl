@@ -4,7 +4,7 @@ import numpy as np
 import os
 from config.paths import dirs
 
-cleaner_version = 2020091600 ## YearMonthDayRevision YYYYMMDDrr  can have up to 100 revisions/day
+cleaner_version = 2020092100 ## YearMonthDayRevision YYYYMMDDrr  can have up to 100 revisions/day
 
 class Log_cleaner():
     def __init__(self,file_path):
@@ -22,7 +22,6 @@ class Log_cleaner():
         self.print_data = pd.DataFrame(session.print_lines[i+1:])
 
         if self.session.task_name == 'sequence':
-            print('session is seqence andy!')
             self.data_folder_path = '{}\{}'.format(dirs['network_dir'],"Sequence_Training")
         else:
             self.data_folder_path = '{}\{}'.format(dirs['network_dir'],"Markov_Training")
@@ -30,11 +29,10 @@ class Log_cleaner():
     def clean(self):
         self.create_folders()
         self.create_dataframes(self.session.task_name)
-        self.expand_results()
+        self.expand_results(self.session.task_name)
         self.create_html_table()
         # self.create_bokeh_graph()
-        saveName = '{}/{}/tables/{}_table.html'.format(self.data_folder_path,self.session.subject_ID,self.session_name)
-        self.save_json(saveName)
+        self.save_json()
         self.move_raw_txtfile()
 
     def create_folders(self):
@@ -149,7 +147,7 @@ class Log_cleaner():
             self.combined = pd.concat([self.rslt_data, outcome_truth_table], axis=1)
             self.combined = self.combined[['Trial','Reward_vol','Center_hold','Side_delay','Seq_raw','Seq_int','Seq_length','Choice_ltr','Outcome','Left_choice','Seq_completed','Abandoned','Reward_dispensed']] # reorder columns
     
-    def create_html_table(self,saveName):
+    def create_html_table(self):
 
         pd.set_option('colheader_justify', 'center')   # FOR TABLE <th>
 
@@ -199,6 +197,7 @@ class Log_cleaner():
         '''
 
         # OUTPUT AN HTML FILE
+        saveName = '{}/{}/tables/{}_table.html'.format(self.data_folder_path,self.session.subject_ID,self.session_name)
         with open(saveName, 'w') as f:
             f.write(html_string.format(css=css_string,table=self.combined.to_html(index=False,classes='mystyle')))
 
@@ -339,7 +338,7 @@ class Log_cleaner():
         with open(saveName,'w') as f:
             json.dump(json_dictionary,f)
 
-        print('done')
+        print('json saved')
 
     def move_raw_txtfile(self):
         import shutil
