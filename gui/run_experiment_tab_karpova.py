@@ -32,6 +32,7 @@ class Run_experiment_tab(QtGui.QWidget):
         self.name_text  = QtGui.QLineEdit()
         self.name_text.setReadOnly(True)
         self.plots_button =  QtGui.QPushButton('Show plots')
+        self.plots_button.setIcon(QtGui.QIcon("gui/icons/bar-graph.svg"))
         self.plots_button.clicked.connect(self.experiment_plot.show)
         self.logs_button = QtGui.QPushButton('Hide logs')
         self.logs_button.clicked.connect(self.show_hide_logs)    
@@ -327,6 +328,7 @@ class Run_experiment_tab(QtGui.QWidget):
                     self.startstopclose_all_button.setText('Stop All')
                 else:
                     self.startstopclose_all_button.setText('Close Experiment')
+                    self.startstopclose_all_button.setIcon(QtGui.QIcon("gui/icons/close.svg"))
 
         if not boards_running and self.setups_finished == len(self.boards):
             self.startstopclose_all_button.setEnabled(True)
@@ -366,6 +368,7 @@ class Subjectbox(QtGui.QGroupBox):
         self.boxTitle.setStyleSheet("font:15pt;color:blue;")
 
         self.start_stop_button = QtGui.QPushButton('Start')
+        self.start_stop_button.setIcon(QtGui.QIcon("gui/icons/play.svg"))
         self.start_stop_button.setEnabled(False)
         self.time_label = QtGui.QLabel('Time:')
         self.time_text = QtGui.QLineEdit()
@@ -428,6 +431,7 @@ class Subjectbox(QtGui.QGroupBox):
         board.start_framework()
 
         self.start_stop_button.setText('Stop')
+        self.start_stop_button.setIcon(QtGui.QIcon("gui/icons/stop.svg"))
         self.run_exp_tab.setups_running += 1
 
         self.run_exp_tab.GUI_main.refresh_timer.stop()
