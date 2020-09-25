@@ -1,7 +1,7 @@
 from pyControl.utility import *
 from pyControl.competitor import *
 import hardware_definition as hw
-version = 2020091600 ## YearMonthDayRevision YYYYMMDDrr  can have up to 100 revisions/day
+version = 2020092500 ## YearMonthDayRevision YYYYMMDDrr  can have up to 100 revisions/day
 states= [
     'wait_for_center',
     'wait_for_choice',
@@ -28,6 +28,7 @@ v.in_center___ = False
 v.hold_center___ = 0
 v.side_delay___ = 0
 v.sequence_index___ = -1
+v.completed_sequences___ = 0
 ##### Configurable Variables #######
 
 ### Bout Variables
@@ -136,6 +137,7 @@ def wait_for_outcome(event):
         set_timer('blink_timer', v.time_blink)
     elif event == 'side_delay_timer': # side delay has expired, can now deliver reward and/or move on to next trial initiation
         if v.outcome___ == 'C':
+            v.completed_sequences___ += 1
             if withprob(v.correct_reward_rate):
                 giveReward(v.chosen_side___)
             else:

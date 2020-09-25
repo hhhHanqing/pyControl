@@ -47,10 +47,18 @@ class Telegram():
     def callback(self,update,context):
         rig = self.subjectboxes[int(update.callback_query.data)]
         rig.board.get_variable('trial_current_number___')
+        rig.board.get_variable('completed_sequences___')
         self.rigBot.answer_callback_query(update.callback_query.id) # send answer so the button doesn't keep on spinning.
-        msg = "<u><b>{}</b></u>\n\nClock = {}\nCurrent trial = {}".format(
-            rig.boxTitle.text(),
-            rig.time_text.text(),
-            eval(str(rig.board.sm_info['variables']['trial_current_number___']))
-            )
+        completedTrials = eval(str(rig.board.sm_info['variables']['trial_current_number___'])) - 1
+        completedSeq = eval(str(rig.board.sm_info['variables']['completed_sequences___']))
+        if completedTrials > 0:
+            msg = \
+                f"<u><b>{rig.boxTitle.text()}</b></u>\n\n" \
+                f"⏱️ Time = {rig.time_text.text()}\n" \
+                f"✅ Correct = {round(completedSeq/completedTrials*100,2)}% ({completedSeq}/{completedTrials})"
+        else:
+            msg = \
+                f"<u><b>{rig.boxTitle.text()}</b></u>\n\n" \
+                f"⏱️ Time = {rig.time_text.text()}\n" \
+                f"✅ Correct = There haven't been any trials yet"
         self.notify(msg)
