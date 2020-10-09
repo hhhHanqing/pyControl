@@ -60,7 +60,7 @@ class Run_task_tab(QtGui.QWidget):
         self.board_select.setEditable(True)
         self.board_select.setFixedWidth(100)
         self.connect_button = QtGui.QPushButton('Connect')
-        self.connect_button.setIcon(QtGui.QIcon("gui/icons/circle-check.svg"))
+        self.connect_button.setIcon(QtGui.QIcon("gui/icons/connect.svg"))
         self.connect_button.setEnabled(False)
         self.config_button = QtGui.QPushButton('Config')
         self.config_button.setIcon(QtGui.QIcon("gui/icons/settings.svg"))
@@ -204,9 +204,11 @@ class Run_task_tab(QtGui.QWidget):
         subject_ID = self.subject_text.text()
         if  os.path.isdir(self.data_dir) and subject_ID:
             self.start_button.setText('Record')
+            self.start_button.setIcon(QtGui.QIcon("gui/icons/record.svg"))
             return True
         else:
             self.start_button.setText('Start')
+            self.start_button.setIcon(QtGui.QIcon("gui/icons/play.svg"))
             return False
 
     def refresh(self):
@@ -259,7 +261,7 @@ class Run_task_tab(QtGui.QWidget):
             self.config_button.setEnabled(True)
             self.connect_button.setEnabled(True)
             self.connect_button.setText('Disconnect')
-            self.connect_button.setIcon(QtGui.QIcon("gui/icons/circle-error.svg"))
+            self.connect_button.setIcon(QtGui.QIcon("gui/icons/disconnect.svg"))
             self.status_text.setText('Connected')
             if self.board.status['framework']:
                 self.task_groupbox.setEnabled(True)
@@ -283,7 +285,7 @@ class Run_task_tab(QtGui.QWidget):
         self.config_button.setEnabled(False)
         self.board_select.setEnabled(True)
         self.connect_button.setText('Connect')
-        self.connect_button.setIcon(QtGui.QIcon("gui/icons/circle-check.svg"))
+        self.connect_button.setIcon(QtGui.QIcon("gui/icons/connect.svg"))
         self.status_text.setText('Not connected')
         self.task_changed()
         self.connected = False
