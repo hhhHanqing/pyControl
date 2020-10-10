@@ -22,6 +22,7 @@ events = [
     'button',
     'tone_off',
     'check_serial',
+    'Sync_pulse',
     ]
 
 ####### Hidden script variables ##########
@@ -85,6 +86,7 @@ def run_start():
     v.trial_new_block = 0
     hw.Speakers.set_volume(v.speaker_volume)
     set_timer('check_serial',10)
+    hw.Camera.frame_grab_trigger.pulse(50)
 
 def waiting_for_initiation_center(event):
     if event == 'entry':
