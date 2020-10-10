@@ -17,7 +17,8 @@ events = [
     'blink_timer',
     'side_delay_timer',
     'button',
-    'check_serial'
+    'check_serial',
+    'Sync_pulse'
     ]
 
 ####### Hidden script variables ##########
@@ -86,6 +87,7 @@ def run_start():
     updateHold()
     updateSide()
     set_timer('check_serial',10)
+    hw.Camera.frame_grab_trigger.pulse(50)
 
 def wait_for_center(event):
     if event == 'entry':
