@@ -89,7 +89,7 @@ class Run_experiment_tab(QtGui.QWidget):
 
         setup_subject_pairs = {}
         for subject in subjects:
-            setup_subject_pairs[subject_dict[subject]['Setup']] = subject
+            setup_subject_pairs[subject_dict[subject]['setup']] = subject
 
         for i,key in enumerate(sorted(setup_subject_pairs.keys())):
             self.subjectboxes.append(
@@ -287,6 +287,9 @@ class Run_experiment_tab(QtGui.QWidget):
             subjectbox = self.subjectboxes.pop() 
             subjectbox.setParent(None)
             subjectbox.deleteLater()
+
+        # clear icon
+        self.startstopclose_all_button.setIcon(QtGui.QIcon())
         
         if self.telegrammer:
             self.telegrammer.updater.stop()
@@ -440,6 +443,11 @@ class Subjectbox(QtGui.QGroupBox):
 
         if self.parent_telegram:
             self.parent_telegram.add_button(self.boxNum,self.boxTitle)
+
+    def error(self):
+        '''Set state text to error in red.'''
+        QtGui.QMessageBox.warning(self, 'Error',f'There is an error with {self.boxTitle.text()}', QtGui.QMessageBox.Ok)
+        self.task_stopped()
 
     def task_stopped(self,stopped_by_task=False):
         '''Called when task stops running.'''

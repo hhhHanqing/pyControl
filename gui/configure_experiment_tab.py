@@ -5,7 +5,7 @@ from pyqtgraph.Qt import QtGui, QtCore, QtWidgets
 
 from config.paths import dirs
 from gui.dialogs import invalid_run_experiment_dialog, invalid_save_experiment_dialog,unrun_subjects_dialog
-from gui.utility import TableCheckbox, cbox_update_options, cbox_set_item, null_resize, variable_constants, init_keyboard_shortcuts
+from gui.utility import TableCheckbox, cbox_update_options, cbox_set_item, null_resize, variable_constants, init_keyboard_shortcuts,TaskSelectMenu
 
 # --------------------------------------------------------------------------------
 # Experiments_tab
@@ -46,9 +46,9 @@ class Configure_experiment_tab(QtGui.QWidget):
         self.name_label = QtGui.QLabel('Experiment name:')
         self.name_text = QtGui.QLineEdit()
         self.task_label = QtGui.QLabel('Task:')
-        self.task_select = QtGui.QPushButton('select task')
+        self.task_select = TaskSelectMenu(dirs['tasks'],'select task')
         self.hardware_test_label = QtGui.QLabel('Hardware test:')
-        self.hardware_test_select = QtGui.QPushButton('no hardware test')
+        self.hardware_test_select = TaskSelectMenu(dirs['tasks'],'no hardware test',add_default=True)
         self.data_dir_label = QtGui.QLabel('Data dir:')
         self.data_dir_text = QtGui.QLineEdit(dirs['data'])
         self.data_dir_button = QtGui.QPushButton('')
@@ -85,6 +85,7 @@ class Configure_experiment_tab(QtGui.QWidget):
         self.variables_groupbox = QtGui.QGroupBox('Variables')
         self.variablesbox_layout = QtGui.QHBoxLayout(self.variables_groupbox)
         self.variables_table = VariablesTable(self)
+        self.task_select.set_callback(self.variables_table.task_changed)
         self.variablesbox_layout.addWidget(self.variables_table)
 
         # Initialise widgets
@@ -132,50 +133,11 @@ class Configure_experiment_tab(QtGui.QWidget):
                 return
             self.load_experiment(experiment_name)
 
-    def create_callback(self,btn,text):
-        def fxn():
-            if btn.text() != text:
-                btn.setText(text)
-                btn.adjustSize()
-                self.variables_table.task_changed(text)
-        return fxn
-
-    def create_menu(self,menuButton):
-        taskMenu = QtGui.QMenu()
-        task_root = dirs['tasks']
-
-        if menuButton is self.hardware_test_select:
-            taskMenu.addAction('no hardware test',self.create_callback(menuButton,'no hardware test'))
-            taskMenu.addSeparator()
-        previous_menu = taskMenu
-        current_menu = taskMenu
-        for dirName, subdirList, fileList in os.walk(task_root):
-            subfolder = dirName.split(task_root)[1][1:]
-            if subfolder:
-                if any(".py" in filename for filename in fileList): # only add submenu if there are .py files inside
-                    sub_menu = current_menu.addMenu(subfolder.split(os.path.sep)[-1])
-                    for filename in fileList:
-                        if filename.endswith('.py'):
-                            menuItem = filename[:-3]
-                            sub_menu.addAction(menuItem,self.create_callback(menuButton,os.path.join(subfolder,menuItem)))
-                    if subdirList: # continue down to next level
-                        previous_menu = current_menu
-                        current_menu = sub_menu
-                    else: # return up to previous level
-                        current_menu = previous_menu
-            else: # list top level files
-                for filename in fileList:
-                    if filename.endswith('.py'):
-                        menuItem = filename[:-3]
-                        taskMenu.addAction(menuItem,self.create_callback(menuButton,menuItem))
-        return taskMenu
-
-
     def refresh(self):
         '''Called periodically when not running to update available task, ports, experiments.'''
         if self.GUI_main.available_tasks_changed:
-            self.task_select.setMenu(self.create_menu(self.task_select))
-            self.hardware_test_select.setMenu(self.create_menu(self.hardware_test_select))
+            self.task_select.update_menu()
+            self.hardware_test_select.update_menu()
             self.GUI_main.available_tasks_changed = False
         if self.GUI_main.available_experiments_changed:
             cbox_update_options(self.experiment_select, self.GUI_main.available_experiments)
@@ -191,7 +153,7 @@ class Configure_experiment_tab(QtGui.QWidget):
             if (str(self.name_text.text()) == '') and not self.custom_dir:
                 self.data_dir_text.setText(dirs['data'])
 
-    def experiment_dict(self,filtered = False):
+    def experiment_dict(self, filtered=False):
         '''Return the current state of the experiments tab as a dictionary.'''
         return {'name': self.name_text.text(),
                 'task': str(self.task_select.text()),
@@ -245,7 +207,7 @@ class Configure_experiment_tab(QtGui.QWidget):
                 return False
             setup = str(self.subjects_table.cellWidget(s,1).currentText())
             run = self.subjects_table.cellWidget(s,0).isChecked()
-            d[subject] =  {'Setup':setup,'Run':run} # add dict subject entry
+            d[subject] =  {'setup':setup,'run':run} # add dict subject entry
         '''Store the current state of the experiment tab as a JSON object
         saved in the experiments folder as .pcx file.'''
         experiment = self.experiment_dict()
@@ -294,7 +256,6 @@ class Configure_experiment_tab(QtGui.QWidget):
         '''Check that the experiment is valid. Prompt user to save experiment if
         it is new or has been edited. Then run experiment.'''
         experiment = self.experiment_dict(filtered=True)
-
         if not experiment['name']:
             invalid_run_experiment_dialog(self, 'Experiment must have a name.')
             return
@@ -320,7 +281,7 @@ class Configure_experiment_tab(QtGui.QWidget):
         if not experiment['subjects']:
             invalid_run_experiment_dialog(self, 'No subjects selected to run')
             return
-        setups = [experiment['subjects'][subject]['Setup'] for subject in experiment['subjects']]
+        setups = [experiment['subjects'][subject]['setup'] for subject in experiment['subjects']]
         subjects = experiment['subjects'].keys()
         if len(setups) == 0:
                 invalid_run_experiment_dialog(self, 'No subjects specified.')
@@ -349,7 +310,7 @@ class Configure_experiment_tab(QtGui.QWidget):
             all_subjects = self.experiment_dict()['subjects']
             will_not_run = ''
             for subject in all_subjects.keys():
-                if all_subjects[subject]['Run'] == False:
+                if all_subjects[subject]['run'] == False:
                     will_not_run += ('{}\n'.format(subject))
             if will_not_run != '':
                 okay = unrun_subjects_dialog(self.subjects_groupbox,will_not_run)
@@ -394,6 +355,7 @@ class SubjectsTable(QtGui.QTableWidget):
         self.cellChanged.connect(self.cell_changed)
         self.all_setups = set([])
         self.available_setups = []
+        self.unallocated_setups = []
         self.subjects = []
         self.n_subjects = 0
         self.add_subject()
@@ -417,6 +379,9 @@ class SubjectsTable(QtGui.QTableWidget):
         setup_cbox = QtGui.QComboBox()
         setup_cbox.addItems(self.available_setups if self.available_setups
                             else ['select setup'])
+        if self.unallocated_setups:
+            setup_cbox.setCurrentIndex(self.available_setups.index(
+                                       self.unallocated_setups[0]))
         setup_cbox.activated.connect(self.update_available_setups)
         remove_button = QtGui.QPushButton('remove')
         remove_button.setIcon(QtGui.QIcon("gui/icons/remove.svg"))
@@ -461,6 +426,7 @@ class SubjectsTable(QtGui.QTableWidget):
         selected_setups = set([str(self.cellWidget(s,1).currentText())
                                for s in range(self.n_subjects)])
         self.available_setups = sorted(list(self.all_setups))
+        self.unallocated_setups = sorted(list(self.all_setups - selected_setups))
         for s in range(self.n_subjects):
             cbox_update_options(self.cellWidget(s,1), self.available_setups)
 
@@ -469,8 +435,8 @@ class SubjectsTable(QtGui.QTableWidget):
         self.subjects = [str(self.item(s, 2).text()) 
                          for s in range(self.n_subjects) if self.item(s, 2)]
 
-    def subjects_dict(self,filtered = False):
-        '''Return setups and subjects as a dictionary {setup:subject}'''
+    def subjects_dict(self,filtered=False):
+        '''Return setups and subjects as a dictionary {subject:{'setup':setup,'run':run}}'''
         d = {}
         for s in range(self.n_subjects):
             try:
@@ -481,17 +447,17 @@ class SubjectsTable(QtGui.QTableWidget):
             run = self.cellWidget(s,0).isChecked()
             if filtered:
                 if run: 
-                    d[subject] =  {'Setup':setup,'Run':run} # add dict subject entry
+                    d[subject] =  {'setup':setup,'run':run} # add dict subject entry
             else:
-                d[subject] =  {'Setup':setup,'Run':run} # add dict subject entry
+                d[subject] =  {'setup':setup,'run':run} # add dict subject entry
         return d
 
     def set_from_dict(self, subjects_dict):
         '''Fill table with subjects and setups from subjects_dict'''
         self.reset()
         for subject in subjects_dict:
-            setup = subjects_dict[subject]['Setup']
-            do_run = subjects_dict[subject]['Run']
+            setup = subjects_dict[subject]['setup']
+            do_run = subjects_dict[subject]['run']
             self.add_subject(setup,subject,do_run)
         self.update_available_setups()
         self.update_subjects()

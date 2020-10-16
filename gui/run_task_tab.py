@@ -14,8 +14,7 @@ from gui.dialogs import *
 from gui.markov_gui.markov_variable_dialog import *
 from gui.sequence_gui.sequence_variable_dialog import *
 from gui.plotting import Task_plot
-from gui.utility import init_keyboard_shortcuts
-from gui.telegram_notifications import *
+from gui.utility import init_keyboard_shortcuts,TaskSelectMenufrom gui.telegram_notifications import *
 
 # Run_task_gui ------------------------------------------------------------------------
 
@@ -108,7 +107,8 @@ class Run_task_tab(QtGui.QWidget):
         self.task_groupbox = QtGui.QGroupBox('Task')
 
         self.task_label = QtGui.QLabel('Task:')
-        self.task_select = QtGui.QPushButton('select task')
+        self.task_select = TaskSelectMenu(dirs['tasks'],'select task')
+        self.task_select.set_callback(self.task_changed)
         self.upload_button = QtGui.QPushButton('Upload')
         self.upload_button.setIcon(QtGui.QIcon("gui/icons/circle-arrow-up.svg"))
         self.variables_button = QtGui.QPushButton('Variables')
@@ -189,13 +189,6 @@ class Run_task_tab(QtGui.QWidget):
 
         self.disconnect() # Set initial state as disconnected.
 
-    def create_callback(self,text):
-        def fxn():
-            if self.task_select.text() != text:
-                self.task_changed()
-                self.task_select.setText(text)
-        return fxn
-
     # General methods
 
     def print_to_log(self, print_string, end='\n'):
@@ -228,30 +221,7 @@ class Run_task_tab(QtGui.QWidget):
             else: # No setups available to connect to.
                     self.connect_button.setEnabled(False)
         if self.GUI_main.available_tasks_changed:
-            taskMenu = QtGui.QMenu()
-            task_root = dirs['tasks']
-            previous_menu = taskMenu
-            current_menu = taskMenu
-            for dirName, subdirList, fileList in os.walk(task_root):
-                subfolder = dirName.split(task_root)[1][1:]
-                if subfolder:
-                    if any(".py" in filename for filename in fileList): # only add submenu if there are .py files inside
-                        sub_menu = current_menu.addMenu(subfolder.split(os.path.sep)[-1])
-                        for filename in fileList:
-                            if filename.endswith('.py'):
-                                menuItem = filename[:-3]
-                                sub_menu.addAction(menuItem,self.create_callback(os.path.join(subfolder,menuItem)))
-                        if subdirList: # continue down to next level
-                            previous_menu = current_menu
-                            current_menu = sub_menu
-                        else: # return up to previous level
-                            current_menu = previous_menu
-                else: # list top level files
-                    for filename in fileList:
-                        if filename.endswith('.py'):
-                            menuItem = filename[:-3]
-                            taskMenu.addAction(menuItem,self.create_callback(menuItem))
-            self.task_select.setMenu(taskMenu)
+            self.task_select.update_menu()
         if self.GUI_main.data_dir_changed and not self.custom_dir:
             self.data_dir_text.setText(dirs['data'])
         if self.task:
@@ -318,48 +288,49 @@ class Run_task_tab(QtGui.QWidget):
         self.task_changed()
         self.connected = False
 
-    def task_changed(self):
+    def task_changed(self,task=None):
         self.uploaded = False
         self.upload_button.setText('Upload')
         self.upload_button.setIcon(QtGui.QIcon("gui/icons/circle-arrow-up.svg"))
         self.start_button.setEnabled(False)
 
     def setup_task(self):
+        task = self.task_select.text()
+        if task == 'select task':
+            return
         try:
-            task = self.task_select.text()
-            if task != 'select task':
-                if self.uploaded:
-                    self.status_text.setText('Resetting task..')
-                else:
-                    self.status_text.setText('Uploading..')
-                    self.task_hash = _djb2_file(os.path.join(dirs['tasks'], task + '.py'))
-                self.start_button.setEnabled(False)
-                self.variables_button.setEnabled(False)
-                self.repaint()
-                self.board.setup_state_machine(task, uploaded=self.uploaded)
-                if self.variables_dialog:
-                    self.variables_button.clicked.disconnect()
-                    self.variables_dialog.deleteLater()
-                if self.board.sm_info['name'] == 'markov':
-                    self.variables_dialog = Markov_Variables_dialog(self, self.board)
-                elif self.board.sm_info['name'] == 'sequence':
-                    self.variables_dialog = Sequence_Variables_dialog(self, self.board)
-                else:
-                    self.variables_dialog = Variables_dialog(self, self.board)
-                self.data_logger.data_consumers.append(self.variables_dialog)
-                self.variables_button.clicked.connect(self.variables_dialog.exec_)
-                self.variables_button.setEnabled(True)
-                self.task_plot.set_state_machine(self.board.sm_info)
-                self.file_groupbox.setEnabled(True)
-                self.session_groupbox.setEnabled(True)
-                self.start_button.setEnabled(True)
-                self.stop_button.setEnabled(False)
-                self.status_text.setText('Uploaded : ' + task)
-                self.task = task
-                self.fresh_task = True
-                self.uploaded = True
-                self.upload_button.setText('Reset')
-                self.upload_button.setIcon(QtGui.QIcon("gui/icons/refresh.svg"))
+            if self.uploaded:
+                self.status_text.setText('Resetting task..')
+            else:
+                self.status_text.setText('Uploading..')
+                self.task_hash = _djb2_file(os.path.join(dirs['tasks'], task + '.py'))
+            self.start_button.setEnabled(False)
+            self.variables_button.setEnabled(False)
+            self.repaint()
+            self.board.setup_state_machine(task, uploaded=self.uploaded)
+            if self.variables_dialog:
+                self.variables_button.clicked.disconnect()
+                self.variables_dialog.deleteLater()
+            if self.board.sm_info['name'] == 'markov':
+                self.variables_dialog = Markov_Variables_dialog(self, self.board)
+            elif self.board.sm_info['name'] == 'sequence':
+                self.variables_dialog = Sequence_Variables_dialog(self, self.board)
+            else:
+                self.variables_dialog = Variables_dialog(self, self.board)
+            self.data_logger.data_consumers.append(self.variables_dialog)
+            self.variables_button.clicked.connect(self.variables_dialog.exec_)
+            self.variables_button.setEnabled(True)
+            self.task_plot.set_state_machine(self.board.sm_info)
+            self.file_groupbox.setEnabled(True)
+            self.session_groupbox.setEnabled(True)
+            self.start_button.setEnabled(True)
+            self.stop_button.setEnabled(False)
+            self.status_text.setText('Uploaded : ' + task)
+            self.task = task
+            self.fresh_task = True
+            self.uploaded = True
+            self.upload_button.setText('Reset')
+            self.upload_button.setIcon(QtGui.QIcon("gui/icons/refresh.svg"))
         except PyboardError:
             self.status_text.setText('Error setting up state machine.')
      

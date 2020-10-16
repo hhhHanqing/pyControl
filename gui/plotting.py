@@ -391,7 +391,7 @@ class Experiment_plot(QtGui.QMainWindow):
         subjects = subject_dict.keys()
         setup_subject_pairs = {}
         for subject in subjects:
-            setup_subject_pairs[subject_dict[subject]['Setup']] = subject
+            setup_subject_pairs[subject_dict[subject]['setup']] = subject
         # Add plot tabs in order of setup name
         for key in sorted(setup_subject_pairs.keys()):
             self.subject_plots.append(Task_plot(self))
