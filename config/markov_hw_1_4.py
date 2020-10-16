@@ -16,7 +16,7 @@ Rpoke       = Nosepoke(board.port_5, nose_event = 'R_nose', lick_event = 'R_lick
 houselight  = _h.Digital_output(board.port_6.POW_A)
 
 ######### Bottom Row ###########
-# empty port 7
+Camera      = Camera(board.port_7, sync_event = 'Sync_pulse')
 Speakers    = Teensy_audio(board.port_8)
 # empty port 9
 BaseStation = Base_station_serial(board.port_10) 
