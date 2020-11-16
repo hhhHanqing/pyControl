@@ -95,7 +95,7 @@ class Sequence_Plot():
                 elif outcome == 'B': # background reward
                     color = 2
 
-                if abandoned == 'True':
+                if abandoned=='1':
                     symbol = 0
                 else:
                     symbol = 2
