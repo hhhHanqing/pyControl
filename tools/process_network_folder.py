@@ -2,7 +2,7 @@ import os
 import sys
 top_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if not top_dir in sys.path: sys.path.insert(0, top_dir)
-from markov_data_cleaner import *
+from tools.data_cleaner import Log_cleaner
 from config.paths import data_dir, tasks_dir, network_dir
 
 experiment = 'Markov_Training'

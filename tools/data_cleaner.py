@@ -4,7 +4,7 @@ import numpy as np
 import os
 from config.paths import dirs
 
-cleaner_version = 2020092100 ## YearMonthDayRevision YYYYMMDDrr  can have up to 100 revisions/day
+cleaner_version = 2020111600 ## YearMonthDayRevision YYYYMMDDrr  can have up to 100 revisions/day
 
 class Log_cleaner():
     def __init__(self,file_path):
@@ -22,34 +22,34 @@ class Log_cleaner():
         self.print_data = pd.DataFrame(session.print_lines[i+1:])
 
         if self.session.task_name == 'sequence':
-            self.data_folder_path = '{}\{}'.format(dirs['network_dir'],"Sequence_Training")
+            self.data_folder_path = os.path.join(dirs['network_dir'],"Sequence_Training")
         else:
-            self.data_folder_path = '{}\{}'.format(dirs['network_dir'],"Markov_Training")
+            self.data_folder_path = os.path.join(dirs['network_dir'],"Markov_Training")
 
     def clean(self):
         self.create_folders()
         self.create_dataframes(self.session.task_name)
         self.expand_results(self.session.task_name)
-        self.create_html_table()
-        # self.create_bokeh_graph()
+        # self.create_html_table()
+        # self.create_markov_bokeh()
         self.save_json()
         self.move_raw_txtfile()
 
     def create_folders(self):
-        rat = self.session.subject_ID
+        rat = str(self.session.subject_ID)
         try:
-            os.mkdir('{}/{}'.format(self.data_folder_path,rat)) #make directory if it doesn't already exist
+            os.mkdir(os.path.join(self.data_folder_path,rat))
             print('made new directory')
         except:
             pass
 
-        folder_names = ['raw','outcome_data','tables','bokeh_plots']
+        folder_names = ['raw','cleaned_json']
 
         for fn in folder_names:
             try:
-                newFolder = '{}/{}/{}'.format(self.data_folder_path,rat,fn)
+                newFolder = os.path.join(self.data_folder_path,rat,fn)
                 os.mkdir(newFolder)
-                print('Created {}/{}'.format(rat,fn))
+                print('Created {}'.format(newFolder))
             except:
                 pass # folder already exists
 
@@ -78,12 +78,8 @@ class Log_cleaner():
         elif task == 'sequence':
             self.rslt_data.rename(columns={1:'Trial',2:'Seq_raw',3:'Choice_ltr',4:'Outcome',5:'Abandoned',6:'Reward_vol',7:'Center_hold',8:'Side_delay'},inplace=True)
         self.rslt_data.reset_index(drop=True,inplace=True)
-        
-
 
     def expand_results(self,task):
-
-
         right_mask = self.rslt_data['Choice_ltr']=='R'
         left_mask = self.rslt_data['Choice_ltr']=='L'
 
@@ -147,8 +143,60 @@ class Log_cleaner():
             self.combined = pd.concat([self.rslt_data, outcome_truth_table], axis=1)
             self.combined = self.combined[['Trial','Reward_vol','Center_hold','Side_delay','Seq_raw','Seq_int','Seq_length','Choice_ltr','Outcome','Left_choice','Seq_completed','Abandoned','Reward_dispensed']] # reorder columns
     
-    def create_html_table(self):
+    def save_json(self):
+        import json
 
+        # https://stackoverflow.com/questions/50916422/python-typeerror-object-of-type-int64-is-not-json-serializable/50916741
+        class NpEncoder(json.JSONEncoder):
+            def default(self, obj):
+                if isinstance(obj, np.integer):
+                    return int(obj)
+                elif isinstance(obj, np.floating):
+                    return float(obj)
+                elif isinstance(obj, np.ndarray):
+                    return obj.tolist()
+                else:
+                    return super(NpEncoder, self).default(obj)
+                
+        json_dictionary = {}
+
+        session_dict = {
+                'task':self.session.task_name,
+                'task_version':self.task_version,
+                'task_hash':self.session.task_hash,
+                'setup':self.session.setup_ID,
+                'subject':self.session.subject_ID,
+                'datetime':self.session.datetime_string,
+                'cleaning_script_version':str(cleaner_version)
+            }
+        json_dictionary['Session_info'] = session_dict   
+
+        outcome_dictionary = {}
+        for col in self.combined.columns:
+            outcome_dictionary[col] = self.combined[col].values.tolist()
+        json_dictionary['Outcomes'] = outcome_dictionary   
+
+        new_bout_dictionary = {}
+        for col in self.new_bout_data.columns:
+            new_bout_dictionary[col] = self.new_bout_data[col].values.tolist()
+        json_dictionary['Bouts'] = new_bout_dictionary   
+        event_dictionary = {}
+        for event_type in self.session.times:
+            event_dictionary[event_type] = list(self.session.times[event_type])
+        json_dictionary['Events'] = event_dictionary
+
+        saveName = os.path.join(self.data_folder_path,str(self.session.subject_ID),"cleaned_json",self.session_name+".json")
+        with open(saveName,'w') as f:
+            json.dump(json_dictionary,f,cls=NpEncoder)
+
+        print('json saved')
+
+    def move_raw_txtfile(self):
+        import shutil
+        text_in_raw_folder = os.path.join(self.data_folder_path,str(self.session.subject_ID),"raw",self.session_name+".txt")
+        shutil.move(self.txt_file,text_in_raw_folder)
+
+    def create_html_table(self):
         pd.set_option('colheader_justify', 'center')   # FOR TABLE <th>
 
         css_string = '''
@@ -197,12 +245,11 @@ class Log_cleaner():
         '''
 
         # OUTPUT AN HTML FILE
-        saveName = '{}/{}/tables/{}_table.html'.format(self.data_folder_path,self.session.subject_ID,self.session_name)
+        saveName = os.path.join(self.data_folder_path,self.session.subject_ID,"tables",f'{self.session_name}_table.html')
         with open(saveName, 'w') as f:
             f.write(html_string.format(css=css_string,table=self.combined.to_html(index=False,classes='mystyle')))
 
-
-    def create_bokeh_graph(self):
+    def create_markov_bokeh(self):
         def getSeries(colName,rename):
             series = self.combined.loc[self.combined[colName]==1,colName]
             series[:] = rename
@@ -309,38 +356,6 @@ class Log_cleaner():
         select.add_tools(range_tool)
         select.toolbar.active_multi = range_tool
 
-        bk.output_file('{}/{}/bokeh_plots/{}_plots.html'.format(self.data_folder_path,self.session.subject_ID,self.session_name))
+        bokeh_output_path = os.path.join(self.data_folder_path,self.session.subject_ID,"bokeh_plots",f'{self.session_name}_plots.html')
+        bk.output_file(bokeh_output_path)
         bk.save(column(p,probabilities,select))
-
-    def save_json(self):
-        import json
-
-        json_dictionary = {}
-
-        #convert dataframe to dictionary
-        for col in self.combined.columns:
-            json_dictionary[col] = self.combined[col].values.tolist()
-
-        # add session information
-        session_dict = {
-            'task':self.session.task_name,
-            'task_version':self.task_version,
-            'task_hash':self.session.task_hash,
-            'setup':self.session.setup_ID,
-            'subject':self.session.subject_ID,
-            'datetime':self.session.datetime_string,
-            'cleaning_script_version':str(cleaner_version)
-        }
-
-        json_dictionary['Session_info'] = session_dict   
-            
-        saveName = '{}/{}/outcome_data/{}.json'.format(self.data_folder_path,self.session.subject_ID,self.session_name)
-        with open(saveName,'w') as f:
-            json.dump(json_dictionary,f)
-
-        print('json saved')
-
-    def move_raw_txtfile(self):
-        import shutil
-        text_in_raw_folder = '{}/{}/raw/{}.txt'.format(self.data_folder_path,self.session.subject_ID,self.session_name)
-        shutil.move(self.txt_file,text_in_raw_folder)
