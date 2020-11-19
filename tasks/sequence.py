@@ -88,6 +88,10 @@ def run_start():
     updateSide()
     set_timer('check_serial',10)
     hw.Camera.frame_grab_trigger.pulse(50)
+    hw.Camera.light_123.on()
+    hw.Camera.light_456.on()
+    # hw.Camera.light_123.pulse(freq=5000,duty_cycle=50) # duty_cycle can be 10,25,50 or 75
+    # hw.Camera.light_456.pulse(freq=5000,duty_cycle=50) # duty_cycle can be 10,25,50 or 75
 
 def wait_for_center(event):
     if event == 'entry':

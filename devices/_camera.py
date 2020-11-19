@@ -4,3 +4,5 @@ class Camera():
     def __init__(self, port, sync_event):
         self.frame_grab_trigger = _h.Digital_output(port.DIO_A, pulse_enabled=True)
         self.sync_pulse = _h.Rsync(port.DIO_B,sync_event, mean_IPI= 5000, pulse_dur= 50 )
+        self.light_123 = _h.Digital_output(pin=port.POW_B,pulse_enabled=True)
+        self.light_456 = _h.Digital_output(pin=port.POW_A,pulse_enabled=True)
