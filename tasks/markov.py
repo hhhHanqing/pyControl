@@ -1,7 +1,7 @@
 from pyControl.utility import *
 import hardware_definition as hw
 
-version = 2020061901 ## YearMonthDayRevision YYYYMMDDrr  can have up to 100 revisions/day
+version = 2021012000 ## YearMonthDayRevision YYYYMMDDrr  can have up to 100 revisions/day
 
 states= [
     'waiting_for_initiation_center',
@@ -86,7 +86,8 @@ def run_start():
     v.trial_new_block = 0
     hw.Speakers.set_volume(v.speaker_volume)
     set_timer('check_serial',10)
-    hw.Camera.frame_grab_trigger.pulse(50)
+    hw.Camera.frame_grab_trigger.pulse(50) # trigger frame grab at 50Hz for 50fps video
+    hw.Camera.light.on()
 
 def waiting_for_initiation_center(event):
     if event == 'entry':

@@ -1,7 +1,7 @@
 from pyControl.utility import *
 from pyControl.competitor import *
 import hardware_definition as hw
-version = 2020092500 ## YearMonthDayRevision YYYYMMDDrr  can have up to 100 revisions/day
+version = 2021012000 ## YearMonthDayRevision YYYYMMDDrr  can have up to 100 revisions/day
 states= [
     'wait_for_center',
     'wait_for_choice',
@@ -87,11 +87,9 @@ def run_start():
     updateHold()
     updateSide()
     set_timer('check_serial',10)
-    hw.Camera.frame_grab_trigger.pulse(50)
-    hw.Camera.light_123.on()
-    hw.Camera.light_456.on()
-    # hw.Camera.light_123.pulse(freq=5000,duty_cycle=50) # duty_cycle can be 10,25,50 or 75
-    # hw.Camera.light_456.pulse(freq=5000,duty_cycle=50) # duty_cycle can be 10,25,50 or 75
+    hw.Camera.frame_grab_trigger.pulse(50) # trigger frame grab at 50Hz for 50fps video
+    hw.Camera.light.on()
+    # hw.Camera.light.pulse(freq=5000,duty_cycle=50) # duty_cycle can be 10,25,50 or 75
 
 def wait_for_center(event):
     if event == 'entry':
