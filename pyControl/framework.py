@@ -305,7 +305,7 @@ def run(duration=None):
                 running = False
         # Priority 5: Check for serial input from computer.
         elif usb_serial.any(): 
-            recieve_data()
+            receive_data()
         # Priority 6: Stream analog data.
         elif hw.stream_data_queue.available: 
             hw.IO_dict[hw.stream_data_queue.get()]._process_streaming()
