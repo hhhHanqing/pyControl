@@ -1,7 +1,6 @@
 # Graphical user interface settings.
 
-VERSION = '1.5 : 2020-10-15'
-
+VERSION = '1.6 : 2021-01-19'
 update_interval = 20 # Interval between calls to the GUIs update function (ms).
 
 event_history_len  = 250  # Length of event history to plot (# events).
