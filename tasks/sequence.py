@@ -1,7 +1,7 @@
 from pyControl.utility import *
 from pyControl.competitor import *
 import hardware_definition as hw
-version = 2021012000 ## YearMonthDayRevision YYYYMMDDrr  can have up to 100 revisions/day
+version = 2021020300 ## YearMonthDayRevision YYYYMMDDrr  can have up to 100 revisions/day
 states= [
     'wait_for_center',
     'wait_for_choice',
@@ -12,8 +12,8 @@ events = [
     'L_nose','L_nose_out',
     'C_nose','C_nose_out',
     'R_nose','R_nose_out',
-    'center_hold_timer',
-    'forgive_timer',
+    'held_long_enough',
+    'forgive_window_closed',
     'blink_timer',
     'side_delay_timer',
     'button',
@@ -98,17 +98,17 @@ def wait_for_center(event):
         hw.Lpoke.LED.off()
     elif event == 'C_nose':
         v.in_center___ = True
-        if timer_remaining('center_hold_timer') == 0: # the timer doesn't exist
-            set_timer('center_hold_timer',v.hold_center___, output_event=True)
+        if timer_remaining('held_long_enough') == 0: # the timer doesn't exist, we are at the start of holding our nose inside the poke
+            set_timer('held_long_enough',v.hold_center___, output_event=True) # create this timer. when it is done check if we're still inside the nosepoke, and if so then we've held our nose long enough and can move on to next state
         else:
-            disarm_timer('forgive_timer')
+            disarm_timer('forgive_window_closed') #pretend like we never left the center nosepoke.
     elif event == 'C_nose_out':
         v.in_center___ = False
-        set_timer('forgive_timer',v.time_forgive,output_event=True)
-    elif event == 'forgive_timer':
-        disarm_timer('center_hold_timer')
-    elif event == 'center_hold_timer':
-        if v.in_center___:
+        set_timer('forgive_window_closed',v.time_forgive,output_event=True) # we just exited the center. we now have a limited window of time to return back to the center and be forgiven as if we never left.
+    elif event == 'forgive_window_closed':
+        disarm_timer('held_long_enough') # we exited the nosepoke a while ago and haven't returned within the window of forgiveness. Therefore our center hold timer is disarmed. We will have to make a new attempt at trying hold our nose in the center.
+    elif event == 'held_long_enough':
+        if v.in_center___: # if our nose is still in the port after all this time then we can now move to the next state.
             goto_state('wait_for_choice')
     elif event == 'exit':
         if v.tone_on:
@@ -152,7 +152,7 @@ def wait_for_outcome(event):
     elif event == 'C_nose': # abandon the choice (don't wait for outcome)
         v.abandoned___ = True
         v.in_center___ = True
-        set_timer('center_hold_timer',v.hold_center___, output_event=True)
+        set_timer('held_long_enough',v.hold_center___, output_event=True)
         goto_state('wait_for_center')
     elif event == 'exit':
         disarm_timer('blink_timer')
