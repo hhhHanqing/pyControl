@@ -109,8 +109,9 @@ def wait_for_center(event):
         try_center()
     elif event == 'C_nose_out':
         disarm_timer('faultiness_expired')
+        if v.in_center___: # only do the following if the center wasn't faulty and we have just succesfully started the hold_center timer
+            set_timer('forgive_window_closed',v.time_forgive,output_event=True) # we just exited the center. we now have a limited window of time to return back to the center and be forgiven as if we never left.
         v.in_center___ = False
-        set_timer('forgive_window_closed',v.time_forgive,output_event=True) # we just exited the center. we now have a limited window of time to return back to the center and be forgiven as if we never left.
 
     #events related to faultiness
     elif event == 'R_nose':
@@ -196,7 +197,7 @@ def wait_for_outcome(event):
 There are 2 general outcomes, rewarded or not rewarded.
 There are 5 different paths for arriving at those outcomes.
 Below is the decision tree and descriptions of the 5 paths.
-
+*we added an 6th outcome that occurs from the rat's point of view when choosing a side after encountering a "faulty" nosepoke
 
                                                                 Previous Center Faulty?
                                                                           +
