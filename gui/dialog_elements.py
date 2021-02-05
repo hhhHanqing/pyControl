@@ -2,13 +2,14 @@ from pyqtgraph.Qt import QtGui, QtCore, QtWidgets
 import re
 
 class left_right_vars():
-    def __init__(self,initial_vars_dict,label,min,max,step,suffix,varname=''):
+    def __init__(self,initial_vars_dict,label,min,max,step,suffix,varname='',tooltip=''):
         center = QtCore.Qt.AlignCenter
         Vcenter = QtCore.Qt.AlignVCenter
         right = QtCore.Qt.AlignRight
         button_width = 35
         spin_width = 85
         self.label = QtGui.QLabel(label)
+        self.label.setToolTip(tooltip)
         self.label.setAlignment(right|Vcenter)
         self.leftVar = varname+'_left'
         self.rightVar = varname+'_right'
@@ -81,13 +82,14 @@ class left_right_vars():
         self.right_spn.setValue(eval(str(self.board.sm_info['variables'][self.rightVar])))
 
 class spin_var():
-    def __init__(self,init_var_dict,label,min,max,step,suffix,varname=''):
+    def __init__(self,init_var_dict,label,min,max,step,suffix,varname='',tooltip=''):
         center = QtCore.Qt.AlignCenter
         Vcenter = QtCore.Qt.AlignVCenter
         right = QtCore.Qt.AlignRight
         button_width = 65
         spin_width = 85
         self.label = QtGui.QLabel(label)
+        self.label.setToolTip(tooltip)
         self.label.setAlignment(right|Vcenter)
         self.varname = varname
 
@@ -159,16 +161,18 @@ class spin_var():
         self.set_btn.setVisible(makeVisible)
         
 class two_var():
-    def __init__(self,init_var_dict,label0,label,min,max,step,suffix,varname,label2,min2,max2,step2,suffix2,varname2):
+    def __init__(self,init_var_dict,label0,label,min,max,step,suffix,varname,label2,min2,max2,step2,suffix2,varname2,tooltip1='',tooltip2=''):
         center = QtCore.Qt.AlignCenter
         Vcenter = QtCore.Qt.AlignVCenter
         right = QtCore.Qt.AlignRight
         button_width = 65
         spin_width = 55 
         self.label0 = QtGui.QLabel(label0)
+        self.label0.setToolTip(tooltip1)
         self.label0.setAlignment(right|Vcenter)
 
         self.label = QtGui.QLabel(label)
+        self.label.setToolTip(tooltip2)
         self.label.setAlignment(right|Vcenter)
         self.varname = varname
 
@@ -275,12 +279,13 @@ class two_var():
         self.set_btn.setVisible(makeVisible)
 
 class text_var():
-    def __init__(self,init_var_dict,label,varname='',text_width=80):
+    def __init__(self,init_var_dict,label,varname='',text_width=80,tooltip=''):
         center = QtCore.Qt.AlignCenter
         Vcenter = QtCore.Qt.AlignVCenter
         right = QtCore.Qt.AlignRight
         button_width = 65
         self.label = QtGui.QLabel(label)
+        self.label.setToolTip(tooltip)
         self.label.setAlignment(right|Vcenter)
         self.varname = varname
 
@@ -517,8 +522,8 @@ class base_station():
         self.cerebro_layout = QtGui.QGridLayout()
         self.cerebro_channel = wave_var(init_vars,'<b>Cerebro Channel</b>',0,120,1,'')
         self.cerebro_channel.setBoard(board)
-        self.diode_power_left = wave_var(init_vars,'<b>Left Power</b>',0,1023,1,'','diode_power_left')
-        self.diode_power_right = wave_var(init_vars,'<b>Right Power</b>',0,1023,1,'','diode_power_right')
+        self.diode_power_left = wave_var(init_vars,'<b>Left LD Power</b>',0,1023,1,'','diode_power_left')
+        self.diode_power_right = wave_var(init_vars,'<b>Right LD Power</b>',0,1023,1,'','diode_power_right')
         self.blink_base_btn = QtGui.QPushButton('Blink Base Station')
         self.blink_base_btn.setAutoDefault(False)
         self.cerebro_connect_btn = QtGui.QPushButton('Connect To Cerebro')

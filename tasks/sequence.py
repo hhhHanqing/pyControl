@@ -1,7 +1,8 @@
 from pyControl.utility import *
 from pyControl.competitor import *
 import hardware_definition as hw
-version = 2021020300 ## YearMonthDayRevision YYYYMMDDrr  can have up to 100 revisions/day
+
+version = 2021020400 ## YearMonthDayRevision YYYYMMDDrr  can have up to 100 revisions/day
 states= [
     'wait_for_center',
     'wait_for_choice',
@@ -9,16 +10,18 @@ states= [
     ]
 
 events = [
-    'L_nose','L_nose_out',
-    'C_nose','C_nose_out',
-    'R_nose','R_nose_out',
-    'held_long_enough',
-    'forgive_window_closed',
+    'Sync_pulse',
     'blink_timer',
     'side_delay_timer',
-    'button',
     'check_serial',
-    'Sync_pulse'
+    'held_long_enough',
+    'forgive_window_closed',
+    'faultiness_expired',
+    'R_nose','R_nose_out',
+    'C_nose','C_nose_out',
+    'L_nose','L_nose_out',
+    'C_faulty',
+    'C_legit'
     ]
 
 ####### Hidden script variables ##########
@@ -47,12 +50,18 @@ v.background_reward_rate = 0
 v.reward_volume = 400 # microliters
 
 ### Center Variables
-v.time_hold_center = 100 # milliseconds 
+v.time_hold_center = 35 # milliseconds 
 v.time_forgive = 200
 v.center_hold_constant = True
 v.center_hold_start = 500
 v.center_hold_increment = 1
 v.center_hold_max = 5000
+
+#Faulty Center Variables
+v.faulty_chance = 0.05
+v.max_consecutive_faulty = 5
+v.faulty_time_limit = 400 # milliseconds
+v.faulty_counter___ = 0 
 
 ### Side Variables
 v.time_blink = 100 # milliseconds
@@ -97,19 +106,35 @@ def wait_for_center(event):
         hw.Rpoke.LED.off()
         hw.Lpoke.LED.off()
     elif event == 'C_nose':
-        v.in_center___ = True
-        if timer_remaining('held_long_enough') == 0: # the timer doesn't exist, we are at the start of holding our nose inside the poke
-            set_timer('held_long_enough',v.hold_center___, output_event=True) # create this timer. when it is done check if we're still inside the nosepoke, and if so then we've held our nose long enough and can move on to next state
-        else:
-            disarm_timer('forgive_window_closed') #pretend like we never left the center nosepoke.
+        try_center()
     elif event == 'C_nose_out':
+        disarm_timer('faultiness_expired')
         v.in_center___ = False
         set_timer('forgive_window_closed',v.time_forgive,output_event=True) # we just exited the center. we now have a limited window of time to return back to the center and be forgiven as if we never left.
+
+    #events related to faultiness
+    elif event == 'R_nose':
+        if v.faulty_counter___ > 0 and not v.choice_made_after_faulty:
+            v.outcome___ = 'F'
+            v.trial_current_number___ += 1
+            record_trial(chosen_side='R',was_abandoned=False,legitimate_trial=False)
+            v.choice_made_after_faulty = True # this ensures that we only record the "trial" if it has immediately followed a faulty nosepoke
+    elif event == 'L_nose':
+        if v.faulty_counter___ > 0 and not v.choice_made_after_faulty:
+            v.outcome___ = 'F'
+            v.trial_current_number___ += 1
+            record_trial(chosen_side='L',was_abandoned=False,legitimate_trial=False)
+            v.choice_made_after_faulty = True
+    elif event == 'faultiness_expired': 
+        try_center()
+
+    # timer expiration events
     elif event == 'forgive_window_closed':
-        disarm_timer('held_long_enough') # we exited the nosepoke a while ago and haven't returned within the window of forgiveness. Therefore our center hold timer is disarmed. We will have to make a new attempt at trying hold our nose in the center.
+        disarm_timer('held_long_enough') # we exited the nosepoke a while ago and haven't returned within the window of forgiveness. Therefore our center hold timer is disarmed. We will have to make a new attempt at trying to hold our nose in the center for the required duration.
     elif event == 'held_long_enough':
         if v.in_center___: # if our nose is still in the port after all this time then we can now move to the next state.
             goto_state('wait_for_choice')
+
     elif event == 'exit':
         if v.tone_on:
             hw.Speakers.beep()
@@ -130,15 +155,28 @@ def wait_for_choice(event):
 
 def wait_for_outcome(event):
     if event == 'entry':
+        v.in_center___ = False
         v.abandoned___ = False
         set_timer('blink_timer', v.time_blink) # start blinking
         set_timer('side_delay_timer', v.side_delay___, output_event=True)
+    elif event == 'C_nose': # abandon the choice (don't wait for outcome)
+        try_center() # abandonment not guaranteed. might be a "faulty" nosepoke
+        if v.in_center___: # nosepoke wasn't "faulty" so we can continue with abandonment
+            v.abandoned___ = True
+            goto_state('wait_for_center')
+    elif event == 'C_nose_out':
+        disarm_timer('faultiness_expired')
+        v.in_center___ = False
+    
+    # timer events
     elif event == 'blink_timer': # blink every time_blink
         if v.chosen_side___ == 'L' :
             hw.Lpoke.LED.toggle()
         else:
             hw.Rpoke.LED.toggle()
         set_timer('blink_timer', v.time_blink)
+    elif event == 'faultiness_expired': 
+        try_center()
     elif event == 'side_delay_timer': # side delay has expired, can now deliver reward and/or move on to next trial initiation
         if v.outcome___ == 'C':
             v.completed_sequences___ += 1
@@ -149,22 +187,10 @@ def wait_for_outcome(event):
         elif v.outcome___ == 'B':
             giveReward(v.chosen_side___)
         goto_state('wait_for_center')
-    elif event == 'C_nose': # abandon the choice (don't wait for outcome)
-        v.abandoned___ = True
-        v.in_center___ = True
-        set_timer('held_long_enough',v.hold_center___, output_event=True)
-        goto_state('wait_for_center')
     elif event == 'exit':
         disarm_timer('blink_timer')
         disarm_timer('side_delay_timer')
-        print('rslt,{},{},{},{},{},{},{},{}'.format(v.trial_current_number___,v.reward_seq___,v.chosen_side___,v.outcome___,int(v.abandoned___),v.reward_volume,v.time_hold_center,v.time_side_delay))
-        if v.abandoned___:
-            competitor.update_competitor(v.chosen_side___,False)
-        else:
-            competitor.update_competitor(v.chosen_side___,v.outcome___)
-        v.trials_until_change += -1
-        if v.trials_until_change<=0:
-            start_new_block()
+        record_trial(v.chosen_side___,v.abandoned___,True)
 
 """
 There are 2 general outcomes, rewarded or not rewarded.
@@ -172,36 +198,41 @@ There are 5 different paths for arriving at those outcomes.
 Below is the decision tree and descriptions of the 5 paths.
 
 
-                               Correct Sequence?
-                                       +
-                                       |
-                                 NO    |    YES
- Favorable outcome with    <-----------+----------->  Favorable outcome with
-"background_reward_rate"?                              "correct_reward_rate"?
-             +                                                  +
-             |                                                  |
-   NO        |         YES                             NO       |       YES
-   +---------+-----------+                             +--------+---------+
-   |                     |                             |                  |
-   |                     |                             |                  |
-   |                     v                             |                  |
-   |         Predicted by competitor?                  |                  |
-   |                     +                             |                  |
-   |                     |                             |                  |
-   |             NO      |      YES                    |                  |
-   |             +-------+--------+                    |                  |
-   |             |                |                    |                  |
-   |             |                |                    |                  |
-   v             v                v                    v                  v
+                                                                Previous Center Faulty?
+                                                                          +
+                                                                    NO    |    YES
+                               Correct Sequence? <------------------------+------------+
+                                       +                                               |
+                                       |                                               |
+                                 NO    |    YES                                        |
+ Favorable outcome with    <-----------+----------->  Favorable outcome with           |
+"background_reward_rate"?                              "correct_reward_rate"?          |
+             +                                                  +                      |
+             |                                                  |                      |
+   NO        |         YES                             NO       |       YES            |
+   +---------+-----------+                             +--------+---------+            |
+   |                     |                             |                  |            |
+   |                     |                             |                  |            |
+   |                     v                             |                  |            |
+   |         Predicted by competitor?                  |                  |            |
+   |                     +                             |                  |            |
+   |                     |                             |                  |            |
+   |             NO      |      YES                    |                  |            |
+   |             +-------+--------+                    |                  |            |
+   |             |                |                    |                  |            |
+   |             |                |                    |                  |            |
+   v             v                v                    v                  v            v
 
-  'N'           'B'              'P'                  'W'                'C'
+  'N'           'B'              'P'                  'W'                'C'          'F'
               Rewarded                                                 Rewarded
+
 
 N: not rewarded
 B: background rewarded
 P: predicted
 W: withheld
 C: correct choice rewarded
+F: faulty nosepoke
 
 """
 
@@ -219,8 +250,6 @@ def all_states(event):
     if Rmsg:
         print("Stopping task. Right pump empty")
         stop_framework()
-    if event == 'button':
-        pass
 
 def run_end():
     hw.BaseStation.set_to_zero()
@@ -285,3 +314,29 @@ def updateSide():
         v.side_delay___ = v.time_side_delay
     else:
         v.side_delay___ = min(v.side_delay_start + v.trial_current_number___ * v.side_delay_increment, v.side_delay_max )
+
+def record_trial(chosen_side,was_abandoned,legitimate_trial):
+    print('rslt,{},{},{},{},{},{},{},{},{},{},{}'.format(v.trial_current_number___,v.reward_seq___,chosen_side,v.outcome___,int(was_abandoned),v.reward_volume,v.time_hold_center,v.time_side_delay,v.faulty_chance,v.max_consecutive_faulty,v.faulty_time_limit))
+    if legitimate_trial: ## if the choice came after an legitimate center nosepoke, not a faulty one. In other words, it was a true trial, not just a rat perceived trial.
+        if was_abandoned:
+            competitor.update_competitor(chosen_side,False) 
+        else:
+            competitor.update_competitor(chosen_side,v.outcome___)
+        v.trials_until_change += -1
+        if v.trials_until_change<=0:
+            start_new_block()
+
+def try_center():
+    if withprob(v.faulty_chance) and v.faulty_counter___ < v.max_consecutive_faulty:
+        v.choice_made_after_faulty = False
+        publish_event('C_faulty')
+        v.faulty_counter___ += 1
+        set_timer('faultiness_expired',v.faulty_time_limit, output_event=True) # create this timer. when it is done check if we're still inside the nosepoke, and if so then we've held our nose long enough and can move on to next state
+    else:
+        v.in_center___ = True
+        publish_event('C_legit')
+        v.faulty_counter___ = 0
+        if timer_remaining('held_long_enough') == 0: # the timer doesn't exist, we are at the start of holding our nose inside the poke
+            set_timer('held_long_enough',v.hold_center___, output_event=True) # create this timer. when it is done check if we're still inside the nosepoke, and if so then we've held our nose long enough and can move on to next state
+        else:
+            disarm_timer('forgive_window_closed') #pretend like we never left the center nosepoke.

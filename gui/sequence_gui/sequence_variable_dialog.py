@@ -75,6 +75,8 @@ class Sequence_GUI(QtGui.QWidget):
         
         self.center_hold_label = QtGui.QLabel('<b>Center Hold</b>')
         self.center_hold_label.setAlignment(QtCore.Qt.AlignRight)
+        self.faulty_label = QtGui.QLabel('<b> </b>')
+        self.center_hold_label.setAlignment(QtCore.Qt.AlignCenter)
 
         center_constant = eval(init_vars['center_hold_constant'])
         self.constant_center_radio = QtGui.QRadioButton('Constant')
@@ -92,10 +94,18 @@ class Sequence_GUI(QtGui.QWidget):
         self.hold_start = spin_var(init_vars,'<b>Start</b>',1,5000,10,' ms','center_hold_start')
         self.hold_increment = spin_var(init_vars,'<b>Increment</b>',1,500,1,' ms','center_hold_increment')
         self.hold_max = spin_var(init_vars,'<b>Max</b>',1,10000,10,' ms','center_hold_max')
+        self.faulty_chance = spin_var(init_vars,'<b>Faulty Probability</b>',0,1,.05,'','faulty_chance')
+        self.faulty_maxcount = spin_var(init_vars,'<b>Max Faulty Pokes</b>',0,10,1,'','max_consecutive_faulty','Each time the center nosepoke is entered, there is a proability that the nosepoke is \"faulty\".\nThis variable adjusts the maximum number of consecutive \"faulty\" results that can occur')
+        self.faulty_timer = spin_var(init_vars,'<b>Faulty Time Limit</b>',0,10000,10,' ms','faulty_time_limit')
         # place widgets
         for i,var in enumerate([self.center_delay,self.hold_start,self.hold_increment,self.hold_max,self.forgive_window]):
             var.setBoard(board)
             var.add_to_grid(self.center_layout,i+1)
+
+        self.center_layout.addWidget(self.faulty_label,6,0,1,4)
+        for i,var in enumerate([self.faulty_chance,self.faulty_timer,self.faulty_maxcount]):
+            var.setBoard(board)
+            var.add_to_grid(self.center_layout,i+7)
 
         self.center_widget.setLayout(self.center_layout)
         self.show_center_options()
@@ -136,8 +146,8 @@ class Sequence_GUI(QtGui.QWidget):
         self.variable_tabs = QtGui.QTabWidget()
         self.variable_tabs.addTab(self.sequence_widget,"Bout")
         self.variable_tabs.addTab(self.reward_widget,"Reward")
-        self.variable_tabs.addTab(self.center_widget,"Center Hold")
-        self.variable_tabs.addTab(self.side_widget,"Side Delay")
+        self.variable_tabs.addTab(self.center_widget,"Center Poke")
+        self.variable_tabs.addTab(self.side_widget,"Side Pokes")
         self.variable_tabs.addTab(self.base_station.widget,"Cerebro")
         grid_layout.addWidget(self.variable_tabs,0,0,left_align)
 

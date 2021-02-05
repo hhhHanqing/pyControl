@@ -8,11 +8,12 @@ class Sequence_Plot():
     def __init__(self, parent_plot, data_len=100):
         self.plot_widget = parent_plot
         reward_color = pg.mkColor(0,255,0) # green
+        abandoned_reward_color = pg.mkColor(0,255,0,128) # faded green
         no_reward_color = pg.mkColor(0,0,0) # black
-        reject_color = pg.mkColor(255,255,0) # yellow
-        error_color = pg.mkColor(255,0,0) # red
-        self.my_colors = (reward_color,no_reward_color,reject_color)
-        self.my_symbols = ('o','+','s') # circle, plus, square
+        background_reward_color = pg.mkColor(255,255,0) # yellow
+        faulty_color = pg.mkColor(255,0,0) # red
+        self.my_colors = (reward_color, no_reward_color,background_reward_color,faulty_color,abandoned_reward_color)
+        self.my_symbols = ('o','+','s','t') # circle, plus, square,triangle
         self.is_active = False
         self.do_update = True
         self.data_len = data_len
@@ -41,7 +42,7 @@ class Sequence_Plot():
         self.plot_widget.setLimits(xMin=-1)
 
         self.plot_widget.clear()
-        self.plot_widget.getAxis('bottom').setLabel('Trial')
+        self.plot_widget.getAxis('bottom').setLabel('Rat Perceived Trial')
         self.plot_widget.getAxis('right').setWidth(75)
         self.plot_widget.getAxis('left').setWidth(50)
 
@@ -69,7 +70,7 @@ class Sequence_Plot():
             n_new = len(outcome_msgs)
             self.data = np.roll(self.data, -n_new, axis=0)
             for i, ne in enumerate(outcome_msgs):
-                trial_num_string,self.reward_seq,choice,outcome,abandoned,reward_vol,center_hold,side_delay = ne[-1].split(',')[1:]
+                trial_num_string,self.reward_seq,choice,outcome,abandoned,reward_vol,center_hold,side_delay,faulty_chance,faulty_maxcount,faulty_time_limit = ne[-1].split(',')[1:]
                 self.trial_num = int(trial_num_string)
                 if choice == 'L':
                     if self.last_choice == 'L':
@@ -96,10 +97,21 @@ class Sequence_Plot():
                     color = 2
 
                 if abandoned=='1':
-                    symbol = 0
+                    symbol = 3
+                    if color == 0:
+                        color = 4 
                 else:
                     symbol = 2
-            
+
+                if outcome == 'F': # this "rat percieved trial" occured after a faulty nosepoke
+                    color = 3
+                    symbol = 0
+                    self.next_block_start +=1
+                    self.new_bout_line.setValue(self.next_block_start)
+                    self.bout_text.setPos(self.next_block_start, 6.5)
+                    self.bout_text.setText(str(self.next_block_start - self.trial_num))
+
+                    
                 self.data[-n_new+i,0] = self.trial_num
                 self.data[-n_new+i,1] = side
                 self.data[-n_new+i,2] = color
@@ -108,7 +120,8 @@ class Sequence_Plot():
             self.plot.setData(self.data[:,0],self.data[:,1],
             symbol=[self.my_symbols[int(ID)] for ID in self.data[:,3]],
             symbolSize=10,
-            symbolPen=[pg.mkPen(color=(150,150,150),width=1) if symbol == 2 else pg.mkPen('w',width=1) for symbol in self.data[:,3]],
+            symbolPen=pg.mkPen(color=(150,150,150),width=1),
+            # symbolPen=[pg.mkPen(color=(150,150,150),width=1) if symbol == 2 else pg.mkPen('w',width=1) for symbol in self.data[:,3]],
             symbolBrush=[self.my_colors[int(ID)] for ID in self.data[:,2]])
             self.update_title()
             if self.do_update:
@@ -153,9 +166,9 @@ class Sequence_Plot():
             reward_percentage = round(self.rewarded_trials/self.trial_num*100,2)
         else:
             reward_percentage = 0
-        self.plot_widget.setTitle('<font size="4">{} Choices made --- {}% Rewarded --- Current Reward Sequence:{}</font>'.format(
+        self.plot_widget.setTitle('<font size="4"><span style="color:white;">{}</span> Rat Perceived Choices made --- <span style="color:white;">{}%</span> Perceived Trials Rewarded --- Current Reward Sequence:{}</font>'.format(
             self.trial_num,reward_percentage,self.create_color_string(self.reward_seq)))
-        self.bout_text.setHtml('{} in {} trials'.format(self.create_color_string(self.next_seq),str(self.next_block_start - self.trial_num)))
+        self.bout_text.setHtml('{} in {} real trials'.format(self.create_color_string(self.next_seq),str(self.next_block_start - self.trial_num)))
         if self.label_new_bout:
             self.label_new_bout = False
             current_seq_text = pg.TextItem(html = self.create_color_string(self.reward_seq), anchor=(0, .5))
