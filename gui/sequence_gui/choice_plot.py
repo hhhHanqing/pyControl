@@ -7,12 +7,13 @@ from PyQt5.QtCore import Qt
 class Sequence_Plot():
     def __init__(self, parent_plot, data_len=100):
         self.plot_widget = parent_plot
-        reward_color = pg.mkColor(0,255,0) # green
-        abandoned_reward_color = pg.mkColor(0,255,0,128) # faded green
-        no_reward_color = pg.mkColor(0,0,0) # black
-        background_reward_color = pg.mkColor(255,255,0) # yellow
+        correct_color = pg.mkColor(0,255,0) # green
+        correct_no_liquid_color = pg.mkColor(0,255,0,128) # faded green
+        incorrect_color = pg.mkColor(0,0,0) # black
+        background_color = pg.mkColor(255,255,0) # yellow
+        background_no_liquid_color = pg.mkColor(255,255,0,128) # faded yellow
         faulty_color = pg.mkColor(255,0,0) # red
-        self.my_colors = (reward_color, no_reward_color,background_reward_color,faulty_color,abandoned_reward_color)
+        self.my_colors = (correct_color, incorrect_color,background_color,faulty_color,correct_no_liquid_color,background_no_liquid_color)
         self.my_symbols = ('o','+','s','t') # circle, plus, square,triangle
         self.is_active = False
         self.do_update = True
@@ -88,9 +89,11 @@ class Sequence_Plot():
                     side = 0
                 self.last_choice = choice
 
-                if outcome == 'C' or outcome == 'W': # was rewarded
+                if outcome == 'C': # was rewarded
                     self.rewarded_trials += 1
                     color = 0
+                elif outcome == 'W': # correct sequence, but rewared was withheld
+                    color = 4
                 elif outcome == 'N' or outcome == 'P': # was not rewarded
                     color = 1
                 elif outcome == 'B': # background reward
@@ -100,6 +103,8 @@ class Sequence_Plot():
                     symbol = 3
                     if color == 0:
                         color = 4 
+                    elif color == 2:
+                        color = 5
                 else:
                     symbol = 2
 
