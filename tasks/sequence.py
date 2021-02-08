@@ -51,7 +51,7 @@ v.reward_volume = 400 # microliters
 
 ### Center Variables
 v.time_hold_center = 35 # milliseconds 
-v.time_forgive = 200
+v.time_forgive = 0
 v.center_hold_constant = True
 v.center_hold_start = 500
 v.center_hold_increment = 1
@@ -61,7 +61,7 @@ v.center_hold_max = 5000
 v.faulty_chance = 0.05
 v.max_consecutive_faulty = 5
 v.faulty_time_limit = 400 # milliseconds
-v.faulty_counter___ = 0 
+v.consecutive_faulty___ = 0 
 
 ### Side Variables
 v.time_blink = 100 # milliseconds
@@ -115,24 +115,24 @@ def wait_for_center(event):
 
     #events related to faultiness
     elif event == 'R_nose':
-        if v.faulty_counter___ > 0 and not v.choice_made_after_faulty:
+        if v.consecutive_faulty___ > 0 and not v.choice_made_after_faulty:
             v.outcome___ = 'F'
             v.trial_current_number___ += 1
             record_trial(chosen_side='R',was_abandoned=False,legitimate_trial=False)
             v.choice_made_after_faulty = True # this ensures that we only record the "trial" if it has immediately followed a faulty nosepoke
     elif event == 'L_nose':
-        if v.faulty_counter___ > 0 and not v.choice_made_after_faulty:
+        if v.consecutive_faulty___ > 0 and not v.choice_made_after_faulty:
             v.outcome___ = 'F'
             v.trial_current_number___ += 1
             record_trial(chosen_side='L',was_abandoned=False,legitimate_trial=False)
             v.choice_made_after_faulty = True
     elif event == 'faultiness_expired': 
         try_center()
-
     # timer expiration events
     elif event == 'forgive_window_closed':
         disarm_timer('held_long_enough') # we exited the nosepoke a while ago and haven't returned within the window of forgiveness. Therefore our center hold timer is disarmed. We will have to make a new attempt at trying to hold our nose in the center for the required duration.
     elif event == 'held_long_enough':
+        disarm_timer('forgive_window_closed')
         if v.in_center___: # if our nose is still in the port after all this time then we can now move to the next state.
             goto_state('wait_for_choice')
 
@@ -156,19 +156,15 @@ def wait_for_choice(event):
 
 def wait_for_outcome(event):
     if event == 'entry':
-        v.in_center___ = False
         v.abandoned___ = False
         set_timer('blink_timer', v.time_blink) # start blinking
         set_timer('side_delay_timer', v.side_delay___, output_event=True)
     elif event == 'C_nose': # abandon the choice (don't wait for outcome)
-        try_center() # abandonment not guaranteed. might be a "faulty" nosepoke
-        if v.in_center___: # nosepoke wasn't "faulty" so we can continue with abandonment
-            v.abandoned___ = True
-            goto_state('wait_for_center')
-    elif event == 'C_nose_out':
-        disarm_timer('faultiness_expired')
-        v.in_center___ = False
-    
+        v.abandoned___ = True
+        v.in_center___ = True
+        publish_event('C_legit')
+        set_timer('held_long_enough',v.hold_center___, output_event=True) # create this timer. when it is done check if we're still inside the nosepoke, and if so then we've held our nose long enough and can move on to next state
+        goto_state('wait_for_center')
     # timer events
     elif event == 'blink_timer': # blink every time_blink
         if v.chosen_side___ == 'L' :
@@ -176,8 +172,6 @@ def wait_for_outcome(event):
         else:
             hw.Rpoke.LED.toggle()
         set_timer('blink_timer', v.time_blink)
-    elif event == 'faultiness_expired': 
-        try_center()
     elif event == 'side_delay_timer': # side delay has expired, can now deliver reward and/or move on to next trial initiation
         if v.outcome___ == 'C':
             v.completed_sequences___ += 1
@@ -328,16 +322,21 @@ def record_trial(chosen_side,was_abandoned,legitimate_trial):
             start_new_block()
 
 def try_center():
-    if withprob(v.faulty_chance) and v.faulty_counter___ < v.max_consecutive_faulty:
-        v.choice_made_after_faulty = False
-        publish_event('C_faulty')
-        v.faulty_counter___ += 1
-        set_timer('faultiness_expired',v.faulty_time_limit, output_event=True) # create this timer. when it is done check if we're still inside the nosepoke, and if so then we've held our nose long enough and can move on to next state
-    else:
+    if timer_remaining('forgive_window_closed')>0:
         v.in_center___ = True
-        publish_event('C_legit')
-        v.faulty_counter___ = 0
-        if timer_remaining('held_long_enough') == 0: # the timer doesn't exist, we are at the start of holding our nose inside the poke
-            set_timer('held_long_enough',v.hold_center___, output_event=True) # create this timer. when it is done check if we're still inside the nosepoke, and if so then we've held our nose long enough and can move on to next state
+        disarm_timer('forgive_window_closed') #pretend like we never left the center nosepoke.
+    else:
+        if (v.consecutive_faulty___ < v.max_consecutive_faulty) and withprob(v.faulty_chance):
+            v.in_center___ = False
+            v.choice_made_after_faulty = False
+            publish_event('C_faulty')
+            v.consecutive_faulty___ += 1
+            set_timer('faultiness_expired',v.faulty_time_limit, output_event=True) # create this timer. when it is done check if we're still inside the nosepoke, and if so then we've held our nose long enough and can move on to next state
         else:
-            disarm_timer('forgive_window_closed') #pretend like we never left the center nosepoke.
+            v.in_center___ = True
+            publish_event('C_legit')
+            v.consecutive_faulty___ = 0
+            if timer_remaining('held_long_enough') == 0: # the timer doesn't exist, we are at the start of holding our nose inside the poke
+                set_timer('held_long_enough',v.hold_center___, output_event=True) # create this timer. when it is done check if we're still inside the nosepoke, and if so then we've held our nose long enough and can move on to next state
+            else:
+                disarm_timer('forgive_window_closed') #pretend like we never left the center nosepoke.
