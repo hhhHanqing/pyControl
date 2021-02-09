@@ -2,7 +2,7 @@ from pyControl.utility import *
 from pyControl.competitor import *
 import hardware_definition as hw
 
-version = 2021020400 ## YearMonthDayRevision YYYYMMDDrr  can have up to 100 revisions/day
+version = 2021020900 ## YearMonthDayRevision YYYYMMDDrr  can have up to 100 revisions/day
 states= [
     'wait_for_center',
     'wait_for_choice',
@@ -64,7 +64,7 @@ v.faulty_time_limit = 400 # milliseconds
 v.consecutive_faulty___ = 0 
 
 ### Side Variables
-v.time_blink = 100 # milliseconds
+v.time_blink_rate = 10 #Hz
 v.time_side_delay = 10 # milliseconds
 v.side_delay_constant = True
 v.side_delay_start = 500
@@ -157,7 +157,7 @@ def wait_for_choice(event):
 def wait_for_outcome(event):
     if event == 'entry':
         v.abandoned___ = False
-        set_timer('blink_timer', v.time_blink) # start blinking
+        set_timer('blink_timer', 1000/v.time_blink_rate) # start blinking
         set_timer('side_delay_timer', v.side_delay___, output_event=True)
     elif event == 'C_nose': # abandon the choice (don't wait for outcome)
         v.abandoned___ = True
@@ -171,7 +171,7 @@ def wait_for_outcome(event):
             hw.Lpoke.LED.toggle()
         else:
             hw.Rpoke.LED.toggle()
-        set_timer('blink_timer', v.time_blink)
+        set_timer('blink_timer', 1000/v.time_blink_rate)
     elif event == 'side_delay_timer': # side delay has expired, can now deliver reward and/or move on to next trial initiation
         if v.outcome___ == 'C':
             v.completed_sequences___ += 1

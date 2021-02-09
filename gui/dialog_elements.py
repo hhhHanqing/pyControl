@@ -2,14 +2,13 @@ from pyqtgraph.Qt import QtGui, QtCore, QtWidgets
 import re
 
 class left_right_vars():
-    def __init__(self,initial_vars_dict,label,min,max,step,suffix,varname='',tooltip=''):
+    def __init__(self,initial_vars_dict,label,min,max,step,suffix,varname=''):
         center = QtCore.Qt.AlignCenter
         Vcenter = QtCore.Qt.AlignVCenter
         right = QtCore.Qt.AlignRight
         button_width = 35
         spin_width = 85
         self.label = QtGui.QLabel(label)
-        self.label.setToolTip(tooltip)
         self.label.setAlignment(right|Vcenter)
         self.leftVar = varname+'_left'
         self.rightVar = varname+'_right'
@@ -80,16 +79,18 @@ class left_right_vars():
         during framework run due to get/set.'''
         self.left_spn.setValue(eval(str(self.board.sm_info['variables'][self.leftVar])))
         self.right_spn.setValue(eval(str(self.board.sm_info['variables'][self.rightVar])))
+    
+    def setHint(self,hint):
+        self.label.setToolTip(hint)
 
 class spin_var():
-    def __init__(self,init_var_dict,label,min,max,step,suffix,varname='',tooltip=''):
+    def __init__(self,init_var_dict,label,min,max,step,suffix,varname=''):
         center = QtCore.Qt.AlignCenter
         Vcenter = QtCore.Qt.AlignVCenter
         right = QtCore.Qt.AlignRight
         button_width = 65
         spin_width = 85
         self.label = QtGui.QLabel(label)
-        self.label.setToolTip(tooltip)
         self.label.setAlignment(right|Vcenter)
         self.varname = varname
 
@@ -159,20 +160,21 @@ class spin_var():
         self.spn.setVisible(makeVisible)
         self.get_btn.setVisible(makeVisible)
         self.set_btn.setVisible(makeVisible)
+
+    def setHint(self,hint):
+        self.label.setToolTip(hint)
         
 class two_var():
-    def __init__(self,init_var_dict,label0,label,min,max,step,suffix,varname,label2,min2,max2,step2,suffix2,varname2,tooltip1='',tooltip2=''):
+    def __init__(self,init_var_dict,label0,label,min,max,step,suffix,varname,label2,min2,max2,step2,suffix2,varname2):
         center = QtCore.Qt.AlignCenter
         Vcenter = QtCore.Qt.AlignVCenter
         right = QtCore.Qt.AlignRight
         button_width = 65
         spin_width = 55 
         self.label0 = QtGui.QLabel(label0)
-        self.label0.setToolTip(tooltip1)
         self.label0.setAlignment(right|Vcenter)
 
         self.label = QtGui.QLabel(label)
-        self.label.setToolTip(tooltip2)
         self.label.setAlignment(right|Vcenter)
         self.varname = varname
 
@@ -279,13 +281,12 @@ class two_var():
         self.set_btn.setVisible(makeVisible)
 
 class text_var():
-    def __init__(self,init_var_dict,label,varname='',text_width=80,tooltip=''):
+    def __init__(self,init_var_dict,label,varname='',text_width=80):
         center = QtCore.Qt.AlignCenter
         Vcenter = QtCore.Qt.AlignVCenter
         right = QtCore.Qt.AlignRight
         button_width = 65
         self.label = QtGui.QLabel(label)
-        self.label.setToolTip(tooltip)
         self.label.setAlignment(right|Vcenter)
         self.varname = varname
 
@@ -344,6 +345,9 @@ class text_var():
         during framework run due to get/set.'''
         self.line_edit.setText(str(self.board.sm_info['variables'][self.varname]))
 
+    def setHint(self,hint):
+        self.label.setToolTip(hint)
+        
 class sequence_text_var(text_var):
     def set(self):
         # if self.board.framework_running: # Value returned later.

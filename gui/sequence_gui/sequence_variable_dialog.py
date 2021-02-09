@@ -33,7 +33,8 @@ class Sequence_GUI(QtGui.QWidget):
         self.board = board
 
         left_align = QtCore.Qt.AlignLeft
-
+        def add_separator(layout,r,c,numR,numC):
+            layout.addWidget(QtGui.QLabel('<hr>'),r,c,numR,numC)
         ##############  Sequence Scheduler ##############
         self.sequence_widget = QtGui.QWidget()
         self.sequence_layout = QtGui.QGridLayout()
@@ -46,28 +47,32 @@ class Sequence_GUI(QtGui.QWidget):
             var.setBoard(board)
             var.add_to_grid(self.sequence_layout,i)
 
-        self.tone_enabled_lbl = QtGui.QLabel('<b>Tone Enabled</b>')
-        self.tone_enabled_lbl.setAlignment(QtCore.Qt.AlignRight)
-        self.tone_checkbox = QtGui.QCheckBox()
-        self.tone_checkbox.setChecked(eval(init_vars['tone_on']))
-        self.sequence_layout.addWidget(self.tone_enabled_lbl,i+1,0)
-        self.sequence_layout.addWidget(self.tone_checkbox,i+1,1)
-
-        self.sequence_widget.setLayout(self.sequence_layout)
-
+        i+=1
+        add_separator(self.sequence_layout,i,0,1,4)
+        i+=1
         ############## Reward Variables ##############
-        self.reward_widget = QtGui.QWidget()
-        self.reward_layout = QtGui.QGridLayout()
         # create widgets
         self.reward_vol = spin_var(init_vars,'<b>Reward Volume</b>', 1,500,25,' µL','reward_volume')
         self.correct_rate = spin_var(init_vars,'<b>Correct Reward Rate</b>',0,1,.05,'','correct_reward_rate')
         self.background_rate = spin_var(init_vars,'<b>Background Reward Rate</b>',0,1,.05,'','background_reward_rate')
         # place widgets
-        for i,var in enumerate([self.reward_vol,self.correct_rate,self.background_rate]):
+        for j,var in enumerate([self.reward_vol,self.correct_rate,self.background_rate]):
             var.setBoard(board)
-            var.add_to_grid(self.reward_layout,i)
-        self.reward_widget.setLayout(self.reward_layout)
+            var.add_to_grid(self.sequence_layout,i+j)
+        self.sequence_widget.setLayout(self.sequence_layout)
 
+        i=i+j+1
+        add_separator(self.sequence_layout,i,0,1,4)
+        i+=1
+
+        self.tone_enabled_lbl = QtGui.QLabel('<b>Tone Enabled</b>')
+        self.tone_enabled_lbl.setAlignment(QtCore.Qt.AlignRight)
+        self.tone_checkbox = QtGui.QCheckBox()
+        self.tone_checkbox.setChecked(eval(init_vars['tone_on']))
+        i+=1
+        self.sequence_layout.addWidget(self.tone_enabled_lbl,i,0)
+        self.sequence_layout.addWidget(self.tone_checkbox,i,1)
+        i+=1
         
         ############## Center Variables #################################################################################3
         self.center_widget = QtGui.QWidget()
@@ -75,8 +80,6 @@ class Sequence_GUI(QtGui.QWidget):
         
         self.center_hold_label = QtGui.QLabel('<b>Center Hold</b>')
         self.center_hold_label.setAlignment(QtCore.Qt.AlignRight)
-        self.faulty_label = QtGui.QLabel('<b> </b>')
-        self.center_hold_label.setAlignment(QtCore.Qt.AlignCenter)
 
         center_constant = eval(init_vars['center_hold_constant'])
         self.constant_center_radio = QtGui.QRadioButton('Constant')
@@ -89,23 +92,29 @@ class Sequence_GUI(QtGui.QWidget):
         self.center_layout.addWidget(self.ramp_center_radio,0,2,1,2)
 
         # create widgets
-        self.forgive_window = spin_var(init_vars,'<b>Forgive Window</b>',1,1000,1,' ms','time_forgive')
+        self.forgive_window = spin_var(init_vars,'<b>Forgive Window</b>',0,1000,1,' ms','time_forgive')
+        self.forgive_window.setHint('A window of time after exiting the center, where the rat can re-enter without penalty, as if he never left')
         self.center_delay = spin_var(init_vars,'<b>Duration</b>',0,10000,100,' ms','time_hold_center')
+        self.center_delay.setHint('The duration the rat must hold its nose in center before the side choices are made available')
         self.hold_start = spin_var(init_vars,'<b>Start</b>',1,5000,10,' ms','center_hold_start')
         self.hold_increment = spin_var(init_vars,'<b>Increment</b>',1,500,1,' ms','center_hold_increment')
         self.hold_max = spin_var(init_vars,'<b>Max</b>',1,10000,10,' ms','center_hold_max')
         self.faulty_chance = spin_var(init_vars,'<b>Faulty Probability</b>',0,1,.05,'','faulty_chance')
-        self.faulty_maxcount = spin_var(init_vars,'<b>Max Faulty Pokes</b>',0,10,1,'','max_consecutive_faulty','Each time the center nosepoke is entered, there is a proability that the nosepoke is \"faulty\".\nThis variable adjusts the maximum number of consecutive \"faulty\" results that can occur')
+        self.faulty_maxcount = spin_var(init_vars,'<b>Max Faulty Pokes</b>',0,10,1,'','max_consecutive_faulty')
+        self.faulty_maxcount.setHint('Each time the center nosepoke is entered, there is a proability that the nosepoke is \"faulty\".\nThis variable adjusts the maximum number of consecutive \"faulty\" results that can occur')
         self.faulty_timer = spin_var(init_vars,'<b>Faulty Time Limit</b>',0,10000,10,' ms','faulty_time_limit')
+        self.faulty_timer.setHint('If the rat leaves its nose in the poke for this amount of time, \nthen the center poke will be automatically retriggered, (and the faultiness dice will be rolled again)')
         # place widgets
         for i,var in enumerate([self.center_delay,self.hold_start,self.hold_increment,self.hold_max,self.forgive_window]):
             var.setBoard(board)
             var.add_to_grid(self.center_layout,i+1)
 
-        self.center_layout.addWidget(self.faulty_label,6,0,1,4)
-        for i,var in enumerate([self.faulty_chance,self.faulty_timer,self.faulty_maxcount]):
+        i+=2
+        add_separator(self.center_layout,i,0,1,4)
+        i+=1
+        for j,var in enumerate([self.faulty_chance,self.faulty_timer,self.faulty_maxcount]):
             var.setBoard(board)
-            var.add_to_grid(self.center_layout,i+7)
+            var.add_to_grid(self.center_layout,i+j)
 
         self.center_widget.setLayout(self.center_layout)
         self.show_center_options()
@@ -127,13 +136,14 @@ class Sequence_GUI(QtGui.QWidget):
         self.side_layout.addWidget(self.constant_side_radio,0,1)
         self.side_layout.addWidget(self.ramp_side_radio,0,2,1,2)
         # create widgets
-        self.blink_delay = spin_var(init_vars,'<b>Blink Delay</b>',50,200,10,' ms','time_blink')
+        self.blink_rate = spin_var(init_vars,'<b>Blink Rate</b>',1,20,1,' Hz','time_blink_rate')
+        self.blink_rate.setHint('While the outcome of the choice is being delayed,\n the chosen side will blink at this rate')
         self.side_delay = spin_var(init_vars,'<b>Duration</b>',0,10000,100,' ms','time_side_delay')
         self.side_start = spin_var(init_vars,'<b>Start</b>',1,5000,10,' ms','side_delay_start')
         self.side_increment = spin_var(init_vars,'<b>Increment</b>',1,500,1,' ms','side_delay_increment')
         self.side_max = spin_var(init_vars,'<b>Max</b>',1,10000,10,' ms','side_delay_max')
         # place widgets
-        for i,var in enumerate([self.side_delay,self.side_start,self.side_increment,self.side_max,self.blink_delay]):
+        for i,var in enumerate([self.side_delay,self.side_start,self.side_increment,self.side_max,self.blink_rate]):
             var.setBoard(board)
             var.add_to_grid(self.side_layout,i+1)
         self.side_widget.setLayout(self.side_layout)
@@ -144,14 +154,13 @@ class Sequence_GUI(QtGui.QWidget):
 
         ###### Place groups into layout ############
         self.variable_tabs = QtGui.QTabWidget()
-        self.variable_tabs.addTab(self.sequence_widget,"Bout")
-        self.variable_tabs.addTab(self.reward_widget,"Reward")
+        self.variable_tabs.addTab(self.sequence_widget,"General")
         self.variable_tabs.addTab(self.center_widget,"Center Poke")
         self.variable_tabs.addTab(self.side_widget,"Side Pokes")
         self.variable_tabs.addTab(self.base_station.widget,"Cerebro")
         grid_layout.addWidget(self.variable_tabs,0,0,left_align)
 
-        for layout in [self.sequence_layout,self.reward_layout,self.center_layout,self.side_layout,self.base_station.cerebro_layout]:
+        for layout in [self.sequence_layout,self.center_layout,self.side_layout,self.base_station.cerebro_layout]:
             layout.setRowStretch(15,1)
             layout.setColumnStretch(15,1)
         grid_layout.setRowStretch(10,1)
