@@ -17,7 +17,7 @@ class Sequence_Plot():
         self.my_symbols = ('o','+','s','t') # circle, plus, square,triangle
         self.is_active = False
         self.do_update = True
-        self.data_len = data_len
+        self.data_len = choice_history_len
         self.new_bout_line = pg.InfiniteLine(angle=90,pen='#FF1FE6')
         self.bout_text = pg.TextItem("testing", anchor=(0, .5))
 
@@ -64,6 +64,7 @@ class Sequence_Plot():
     def process_data(self, new_data):
         if not self.is_active: return
         '''Store new data from board.'''
+        faulty_msgs = [nd for nd in new_data if nd[0] == 'P' and nd[2].split(',')[0]=='faulty'] 
         outcome_msgs = [nd for nd in new_data if nd[0] == 'P' and nd[2].split(',')[0]=='rslt'] 
         new_block_msgs = [nd for nd in new_data if nd[0] == 'P' and nd[2].split(',')[0]=='NB']
         newBlock_var_update_msgs = [nd for nd in new_data if nd[0] == 'V' and nd[2].split(' ')[0].find('trials_until_change')>-1] 
@@ -123,14 +124,19 @@ class Sequence_Plot():
                 self.data[-n_new+i,3] = symbol
  
             self.plot.setData(self.data[:,0],self.data[:,1],
-            symbol=[self.my_symbols[int(ID)] for ID in self.data[:,3]],
-            symbolSize=10,
-            symbolPen=pg.mkPen(color=(150,150,150),width=1),
-            # symbolPen=[pg.mkPen(color=(150,150,150),width=1) if symbol == 2 else pg.mkPen('w',width=1) for symbol in self.data[:,3]],
-            symbolBrush=[self.my_colors[int(ID)] for ID in self.data[:,2]])
+                    symbol=[self.my_symbols[int(ID)] for ID in self.data[:,3]],
+                    symbolSize=10,
+                    symbolPen=pg.mkPen(color=(150,150,150),width=1),
+                    symbolBrush=[self.my_colors[int(ID)] for ID in self.data[:,2]]
+                )
+
+
             self.update_title()
             if self.do_update:
                 self.plot_widget.setRange(xRange=[self.trial_num-choice_plot_window,self.trial_num+choice_plot_look_ahead], padding=0)
+        if faulty_msgs:
+            faulty_line = pg.ErrorBarItem(x=np.array([self.trial_num + .5]),y=np.array([6.5]),height=1,pen = pg.mkPen(color='#FF1F1F',style=Qt.DashLine))
+            self.plot_widget.addItem(faulty_line)
         if new_block_msgs:
             for nb_msg in new_block_msgs:
                 # label old bout change

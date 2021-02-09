@@ -35,7 +35,7 @@ class Task_plot(QtGui.QWidget):
 
         self.zoom_fit_btn = QtGui.QPushButton('Past 10 minutes')
         self.zoom_medium_btn = QtGui.QPushButton('Past 90 seconds')
-        self.zoom_close_btn = QtGui.QPushButton('Past 15 Seconds')
+        self.zoom_close_btn = QtGui.QPushButton('Past 15 seconds')
         self.zoom_fit_btn.clicked.connect(self.fit_zoom)
         self.zoom_medium_btn.clicked.connect(self.medium_zoom)
         self.zoom_close_btn.clicked.connect(self.close_zoom)

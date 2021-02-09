@@ -330,6 +330,7 @@ def try_center():
             v.in_center___ = False
             v.choice_made_after_faulty = False
             publish_event('C_faulty')
+            print('faulty')
             v.consecutive_faulty___ += 1
             set_timer('faultiness_expired',v.faulty_time_limit, output_event=True) # create this timer. when it is done check if we're still inside the nosepoke, and if so then we've held our nose long enough and can move on to next state
         else:
