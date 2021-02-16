@@ -8,7 +8,7 @@ class Sequence_Plot():
     def __init__(self, parent_plot, data_len=100):
         self.plot_widget = parent_plot
         correct_color = pg.mkColor(0,255,0) # green
-        correct_no_liquid_color = pg.mkColor(0,255,0,128) # faded green
+        correct_no_liquid_color = pg.mkColor(0,255,0,80) # faded green
         incorrect_color = pg.mkColor(0,0,0) # black
         background_color = pg.mkColor(255,255,0) # yellow
         background_no_liquid_color = pg.mkColor(255,255,0,128) # faded yellow
@@ -89,6 +89,7 @@ class Sequence_Plot():
                 else:
                     side = 0
                 self.last_choice = choice
+                self.last_side = side
 
                 if outcome == 'C': # was rewarded
                     self.rewarded_trials += 1
@@ -135,7 +136,7 @@ class Sequence_Plot():
             if self.do_update:
                 self.plot_widget.setRange(xRange=[self.trial_num-choice_plot_window,self.trial_num+choice_plot_look_ahead], padding=0)
         if faulty_msgs:
-            faulty_line = pg.ErrorBarItem(x=np.array([self.trial_num + .5]),y=np.array([6.5]),height=1,pen = pg.mkPen(color='#FF1F1F',style=Qt.DashLine))
+            faulty_line = pg.ErrorBarItem(x=np.array([self.trial_num + .5]),y=np.array([self.last_side]),height=1,pen = pg.mkPen(color='#FF1F1F',style=Qt.DashLine))
             self.plot_widget.addItem(faulty_line)
         if new_block_msgs:
             for nb_msg in new_block_msgs:
