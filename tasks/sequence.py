@@ -116,12 +116,14 @@ def wait_for_center(event):
     #events related to faultiness
     elif event == 'R_nose':
         if v.consecutive_faulty___ > 0 and not v.choice_made_after_faulty:
+            v.consecutive_faulty___ = 0
             v.outcome___ = 'F'
             v.trial_current_number___ += 1
             record_trial(chosen_side='R',was_abandoned=False,legitimate_trial=False)
             v.choice_made_after_faulty = True # this ensures that we only record the "trial" if it has immediately followed a faulty nosepoke
     elif event == 'L_nose':
         if v.consecutive_faulty___ > 0 and not v.choice_made_after_faulty:
+            v.consecutive_faulty___ = 0
             v.outcome___ = 'F'
             v.trial_current_number___ += 1
             record_trial(chosen_side='L',was_abandoned=False,legitimate_trial=False)
@@ -148,8 +150,10 @@ def wait_for_choice(event):
         v.trial_current_number___ += 1
     elif event == 'R_nose':
         getOutcome('R')
+        v.consecutive_faulty___ = 0
     elif event == 'L_nose':
         getOutcome('L')
+        v.consecutive_faulty___ = 0
     elif event == 'exit':
         if v.tone_on:
             hw.Speakers.beep()
