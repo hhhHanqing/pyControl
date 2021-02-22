@@ -20,6 +20,9 @@ class Sequence_Plot():
         self.data_len = choice_history_len
         self.new_bout_line = pg.InfiniteLine(angle=90,pen='#FF1FE6')
         self.bout_text = pg.TextItem("testing", anchor=(0, .5))
+        self.faulty_line = None
+        self.faulty_drawn_in_center = False
+        self.bout_info_ylocation = 4
 
     def set_state_machine(self,sm_info):
         if not self.is_active: return
@@ -115,7 +118,7 @@ class Sequence_Plot():
                     symbol = 0
                     self.next_block_start +=1
                     self.new_bout_line.setValue(self.next_block_start)
-                    self.bout_text.setPos(self.next_block_start, 6.5)
+                    self.bout_text.setPos(self.next_block_start, self.bout_info_ylocation)
                     self.bout_text.setText(str(self.next_block_start - self.trial_num))
 
                     
@@ -130,14 +133,21 @@ class Sequence_Plot():
                     symbolPen=pg.mkPen(color=(150,150,150),width=1),
                     symbolBrush=[self.my_colors[int(ID)] for ID in self.data[:,2]]
                 )
+            
+            if self.faulty_drawn_in_center:
+                self.faulty_drawn_in_center = False
+                self.plot_widget.removeItem(self.faulty_line)
+                self.faulty_line = pg.ErrorBarItem(x=np.array([self.trial_num - .5]),y=np.array([self.last_side]),height=.5,pen = pg.mkPen(color='#FF1F1F',width=3))
+                self.plot_widget.addItem(self.faulty_line)
 
 
             self.update_title()
             if self.do_update:
                 self.plot_widget.setRange(xRange=[self.trial_num-choice_plot_window,self.trial_num+choice_plot_look_ahead], padding=0)
-        if faulty_msgs:
-            faulty_line = pg.ErrorBarItem(x=np.array([self.trial_num + .5]),y=np.array([self.last_side]),height=1,pen = pg.mkPen(color='#FF1F1F',style=Qt.DashLine))
-            self.plot_widget.addItem(faulty_line)
+        if faulty_msgs and not self.faulty_drawn_in_center:
+            self.faulty_line = pg.ErrorBarItem(x=np.array([self.trial_num + .5]),y=np.array([6.5]),height=.5,pen = pg.mkPen(color='#FF1F1F',width=3))
+            self.plot_widget.addItem(self.faulty_line)
+            self.faulty_drawn_in_center = True
         if new_block_msgs:
             for nb_msg in new_block_msgs:
                 # label old bout change
@@ -152,7 +162,7 @@ class Sequence_Plot():
                 self.next_block_start = int(content[2]) + self.trial_num
                 self.next_seq = content[3]
                 self.new_bout_line.setValue(self.next_block_start + .5)
-                self.bout_text.setPos(self.next_block_start + .5, 6.5)
+                self.bout_text.setPos(self.next_block_start + .5, self.bout_info_ylocation)
 
             # update title
                 self.reward_seq = content[1]
@@ -163,7 +173,7 @@ class Sequence_Plot():
                 content = block_start_update[2].split(' ')
                 self.next_block_start = int(content[1]) + self.trial_num
                 self.new_bout_line.setValue(self.next_block_start)
-                self.bout_text.setPos(self.next_block_start, 6.5)
+                self.bout_text.setPos(self.next_block_start, self.bout_info_ylocation)
                 self.bout_text.setText(str(self.next_block_start - self.trial_num))
         if newBlock_var_update_msgs:
                 self.update_title()
@@ -178,18 +188,18 @@ class Sequence_Plot():
             reward_percentage = round(self.rewarded_trials/self.trial_num*100,2)
         else:
             reward_percentage = 0
-        self.plot_widget.setTitle('<font size="4"><span style="color:white;">{}</span> Rat Perceived Choices made --- <span style="color:white;">{}%</span> Perceived Trials Rewarded --- Current Reward Sequence:{}</font>'.format(
+        self.plot_widget.setTitle('<font size="4"><span style="color:white;">{}</span> Rat Perceived Choices made --- <span style="color:white;">{:.1f}%</span> Perceived Trials Rewarded --- Current Reward Sequence:{}</font>'.format(
             self.trial_num,reward_percentage,self.create_color_string(self.reward_seq)))
         self.bout_text.setHtml('{} in {} real trials'.format(self.create_color_string(self.next_seq),str(self.next_block_start - self.trial_num)))
         if self.label_new_bout:
             self.label_new_bout = False
             current_seq_text = pg.TextItem(html = self.create_color_string(self.reward_seq), anchor=(0, .5))
-            current_seq_text.setPos(self.trial_num +.5, 6.5)
+            current_seq_text.setPos(self.trial_num +.5, self.bout_info_ylocation)
             self.plot_widget.addItem(current_seq_text)
 
             if self.trial_num != 0: #don't do this for start of session
                 previous_bout_length_text = pg.TextItem(str(self.trial_num - self.bout_start_trial), anchor=(1, .5))
-                previous_bout_length_text.setPos(self.trial_num +.5, 6.5)
+                previous_bout_length_text.setPos(self.trial_num +.5, self.bout_info_ylocation)
                 self.plot_widget.addItem(previous_bout_length_text)
                 self.bout_start_trial = self.trial_num
 
