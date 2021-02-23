@@ -100,7 +100,7 @@ class Sequence_GUI(QtGui.QWidget):
         self.hold_increment = spin_var(init_vars,'<b>Increment</b>',1,500,1,' ms','center_hold_increment')
         self.hold_max = spin_var(init_vars,'<b>Max</b>',1,10000,10,' ms','center_hold_max')
         self.faulty_chance = spin_var(init_vars,'<b>Faulty Probability</b>',0,1,.05,'','faulty_chance')
-        self.faulty_maxcount = spin_var(init_vars,'<b>Max Faulty Pokes</b>',0,10,1,'','max_consecutive_faulty')
+        self.faulty_maxcount = spin_var(init_vars,'<b>Max Faulty Pokes</b>',0,100,1,'','max_consecutive_faulty')
         self.faulty_maxcount.setHint('Each time the center nosepoke is entered, there is a proability that the nosepoke is \"faulty\".\nThis variable adjusts the maximum number of consecutive \"faulty\" results that can occur')
         self.faulty_timer = spin_var(init_vars,'<b>Faulty Time Limit</b>',0,10000,10,' ms','faulty_time_limit')
         self.faulty_timer.setHint('If the rat leaves its nose in the poke for this amount of time, \nthen the center poke will be automatically retriggered, (and the faultiness dice will be rolled again)')

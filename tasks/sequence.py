@@ -2,7 +2,7 @@ from pyControl.utility import *
 from pyControl.competitor import *
 import hardware_definition as hw
 
-version = 2021020900 ## YearMonthDayRevision YYYYMMDDrr  can have up to 100 revisions/day
+version = 2021022200 ## YearMonthDayRevision YYYYMMDDrr  can have up to 100 revisions/day
 states= [
     'wait_for_center',
     'wait_for_choice',
@@ -115,19 +115,17 @@ def wait_for_center(event):
 
     #events related to faultiness
     elif event == 'R_nose':
-        if v.consecutive_faulty___ > 0 and not v.choice_made_after_faulty:
+        if v.consecutive_faulty___ > 0:
             v.consecutive_faulty___ = 0
             v.outcome___ = 'F'
             v.trial_current_number___ += 1
             record_trial(chosen_side='R',was_abandoned=False,legitimate_trial=False)
-            v.choice_made_after_faulty = True # this ensures that we only record the "trial" if it has immediately followed a faulty nosepoke
     elif event == 'L_nose':
-        if v.consecutive_faulty___ > 0 and not v.choice_made_after_faulty:
+        if v.consecutive_faulty___ > 0 :
             v.consecutive_faulty___ = 0
             v.outcome___ = 'F'
             v.trial_current_number___ += 1
             record_trial(chosen_side='L',was_abandoned=False,legitimate_trial=False)
-            v.choice_made_after_faulty = True
     elif event == 'faultiness_expired': 
         try_center()
     # timer expiration events
@@ -150,10 +148,8 @@ def wait_for_choice(event):
         v.trial_current_number___ += 1
     elif event == 'R_nose':
         getOutcome('R')
-        v.consecutive_faulty___ = 0
     elif event == 'L_nose':
         getOutcome('L')
-        v.consecutive_faulty___ = 0
     elif event == 'exit':
         if v.tone_on:
             hw.Speakers.beep()
@@ -271,6 +267,9 @@ def start_new_block ():
 
     # set new block_change_trial
     v.trials_until_change =  int(gauss_rand(v.bout_mean,v.bout_sd))
+    while v.trials_until_change ==0: #if we ever get 0, go ahead and generate another number until we don't get 0
+        v.trials_until_change =  int(gauss_rand(v.bout_mean,v.bout_sd))
+
     print('NB,{},{},{}'.format(v.reward_seq___,v.trials_until_change,next_seq))
 
 def getOutcome(choice):
@@ -332,7 +331,6 @@ def try_center():
     else:
         if (v.consecutive_faulty___ < v.max_consecutive_faulty) and withprob(v.faulty_chance):
             v.in_center___ = False
-            v.choice_made_after_faulty = False
             publish_event('C_faulty')
             print('faulty')
             v.consecutive_faulty___ += 1
