@@ -10,7 +10,8 @@ from config.gui_settings import  VERSION
 from gui.run_task_tab import Run_task_tab
 from gui.dialogs import Board_config_dialog, Keyboard_shortcuts_dialog, Paths_dialog, Telegram_dialog
 from gui.configure_experiment_tab import Configure_experiment_tab
-from gui.run_experiment_tab_karpova import Run_experiment_tab
+from gui.run_experiment_tab import Run_experiment_tab
+# from gui.run_experiment_tab_karpova import Run_experiment_tab
 from gui.setups_tab import Setups_tab
 
 # --------------------------------------------------------------------------------

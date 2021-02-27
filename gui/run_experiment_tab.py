@@ -15,6 +15,8 @@ from com.data_logger import Data_logger
 from gui.plotting import Experiment_plot
 from gui.dialogs import Variables_dialog, Summary_variables_dialog
 from gui.utility import variable_constants
+from gui.markov_gui.markov_variable_dialog import *
+from gui.sequence_gui.sequence_variable_dialog import *
 
 class Run_experiment_tab(QtGui.QWidget):
     '''The run experiment tab is responsible for setting up, running and stopping
@@ -45,9 +47,9 @@ class Run_experiment_tab(QtGui.QWidget):
         self.Hlayout.addWidget(self.startstopclose_all_button)
 
         self.scroll_area = QtGui.QScrollArea(parent=self)
-        self.scroll_area.horizontalScrollBar().setEnabled(False)
+        # self.scroll_area.horizontalScrollBar().setEnabled(False)
         self.scroll_inner = QtGui.QFrame(self)
-        self.boxes_layout = QtGui.QVBoxLayout(self.scroll_inner)
+        self.boxes_layout = QtGui.QGridLayout(self.scroll_inner)
         self.scroll_area.setWidget(self.scroll_inner)
         self.scroll_area.setWidgetResizable(True)
 
@@ -177,8 +179,14 @@ class Run_experiment_tab(QtGui.QWidget):
         self.subjects.sort(key=lambda s: experiment['subjects'][s]['setup'])
         for i,subject in enumerate(self.subjects):
             self.subjectboxes.append(
-                Subjectbox('{} : {}'.format(experiment['subjects'][subject]['setup'], subject), i, self))
+                Subjectbox('{} --- {}'.format(experiment['subjects'][subject]['setup'], subject), i, self))
             self.boxes_layout.addWidget(self.subjectboxes[-1])
+            position = int(experiment['subjects'][subject]['setup'].split('.')[-1])-1
+            if position<3:
+                row = 0
+            else:
+                row = 1
+            self.boxes_layout.addWidget(self.subjectboxes[-1],row,position-3*row)
         # Create data folder if needed.
         if not os.path.exists(self.experiment['data_dir']):
             os.mkdir(self.experiment['data_dir'])        
@@ -344,13 +352,13 @@ class Run_experiment_tab(QtGui.QWidget):
         if self.logs_visible:
             for subjectbox in self.subjectboxes:
                 subjectbox.log_textbox.hide()
-            self.boxes_layout.addStretch(100)
+            # self.boxes_layout.addStretch(100)
             self.logs_visible = False
             self.logs_button.setText('Show logs')
         else:
             for subjectbox in self.subjectboxes:
                 subjectbox.log_textbox.show()
-            self.boxes_layout.takeAt(self.boxes_layout.count()-1) # Remove stretch.
+            # self.boxes_layout.takeAt(self.boxes_layout.count()-1) # Remove stretch.
             self.logs_visible = True
             self.logs_button.setText('Hide logs')
 
@@ -374,7 +382,7 @@ class Subjectbox(QtGui.QGroupBox):
 
     def __init__(self, name, setup_number, parent=None):
 
-        super(QtGui.QGroupBox, self).__init__(name, parent=parent)
+        super(QtGui.QGroupBox, self).__init__("", parent=parent)
         self.board = None # Overwritten with board once instantiated.
         self.GUI_main = self.parent().GUI_main
         self.run_exp_tab = self.parent()
@@ -382,6 +390,9 @@ class Subjectbox(QtGui.QGroupBox):
         self.setup_number = setup_number
         self.print_queue = []
         self.delay_printing = False
+
+        self.boxTitle = QtGui.QLabel(name)
+        self.boxTitle.setStyleSheet("font:15pt;color:blue;")
 
         self.start_stop_button = QtGui.QPushButton('Start')
         self.start_stop_button.setIcon(QtGui.QIcon("gui/icons/play.svg"))
@@ -415,6 +426,7 @@ class Subjectbox(QtGui.QGroupBox):
 
         self.Vlayout = QtGui.QVBoxLayout(self)
         self.Hlayout = QtGui.QHBoxLayout()
+        self.Hlayout.addWidget(self.boxTitle)
         self.Hlayout.addWidget(self.start_stop_button)
         self.Hlayout.addWidget(self.variables_button)
         self.Hlayout.addWidget(self.status_label)
@@ -453,7 +465,12 @@ class Subjectbox(QtGui.QGroupBox):
 
     def assign_board(self, board):
         self.board = board
-        self.variables_dialog = Variables_dialog(self, board)
+        if self.board.sm_info['name'] == 'markov':
+            self.variables_dialog = Markov_Variables_dialog(self, self.board)
+        elif self.board.sm_info['name'] == 'sequence':
+            self.variables_dialog = Sequence_Variables_dialog(self, self.board)
+        else:
+            self.variables_dialog = Variables_dialog(self, self.board)
         self.variables_button.clicked.connect(self.variables_dialog.exec_)
         self.variables_button.setEnabled(True)
         self.start_stop_button.clicked.connect(self.start_stop_task)
@@ -489,6 +506,7 @@ class Subjectbox(QtGui.QGroupBox):
         self.run_exp_tab.GUI_main.refresh_timer.stop()
         self.run_exp_tab.update_timer.start(update_interval)
         self.run_exp_tab.update_startstopclose_button()
+        self.boxTitle.setStyleSheet("font:15pt;color:green;")
 
     def error(self):
         '''Set state text to error in red.'''
@@ -507,6 +525,7 @@ class Subjectbox(QtGui.QGroupBox):
         self.run_exp_tab.setups_finished += 1
         self.variables_button.setEnabled(False)
         self.run_exp_tab.update_startstopclose_button()
+        self.boxTitle.setStyleSheet("font:15pt;color:grey;")
 
     def update(self):
         '''Called regularly while experiment is running.'''
