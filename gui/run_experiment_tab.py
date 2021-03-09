@@ -396,7 +396,7 @@ class Subjectbox(QtGui.QGroupBox):
         self.delay_printing = False
 
         self.boxTitle = QtGui.QLabel(name)
-        self.boxTitle.setStyleSheet("font:15pt;color:blue;")
+        self.boxTitle.setStyleSheet("font:20pt;color:blue;")
 
         self.start_stop_button = QtGui.QPushButton('Start')
         self.start_stop_button.setIcon(QtGui.QIcon("gui/icons/play.svg"))
@@ -512,7 +512,6 @@ class Subjectbox(QtGui.QGroupBox):
         self.run_exp_tab.GUI_main.refresh_timer.stop()
         self.run_exp_tab.update_timer.start(update_interval)
         self.run_exp_tab.update_startstopclose_button()
-        self.boxTitle.setStyleSheet("font:15pt;color:green;")
 
     def error(self):
         '''Set state text to error in red.'''
@@ -532,7 +531,7 @@ class Subjectbox(QtGui.QGroupBox):
         self.run_exp_tab.setups_finished += 1
         self.variables_button.setEnabled(False)
         self.run_exp_tab.update_startstopclose_button()
-        self.boxTitle.setStyleSheet("font:15pt;color:grey;")
+        self.boxTitle.setStyleSheet("font:20pt;color:grey;")
 
     def update(self):
         '''Called regularly while experiment is running.'''
