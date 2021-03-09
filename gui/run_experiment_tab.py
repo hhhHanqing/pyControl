@@ -169,6 +169,7 @@ class Run_experiment_tab(QtGui.QWidget):
         self.logs_button.setText('Hide logs')
         self.startstopclose_all_button.setText('Start All')
         self.startstopclose_all_button.setIcon(QtGui.QIcon("gui/icons/play.svg"))
+        self.startstopclose_all_button.setStyleSheet("background-color:#68ff66")
         # Setup controls box.
         self.name_text.setText(experiment['name'])
         self.startstopclose_all_button.setEnabled(False)
@@ -268,13 +269,16 @@ class Run_experiment_tab(QtGui.QWidget):
         if self.setups_finished == len(self.boards):
             self.startstopclose_all_button.setText('Close Exp.')
             self.startstopclose_all_button.setIcon(QtGui.QIcon("gui/icons/close.svg"))
+            self.startstopclose_all_button.setStyleSheet("background-color:none;")
         else:
             self.startstopclose_all_button.setText('Stop All')
             self.startstopclose_all_button.setIcon(QtGui.QIcon("gui/icons/stop.svg"))
             if self.setups_started == len(self.boards) and self.setups_finished == 0:
                 self.startstopclose_all_button.setEnabled(True)
+                self.startstopclose_all_button.setStyleSheet("background-color:#ff6666;")
             else:
                 self.startstopclose_all_button.setEnabled(False)
+                self.startstopclose_all_button.setStyleSheet("background-color:none;")
 
     def stop_experiment(self):
         self.update_timer.stop()
@@ -396,6 +400,7 @@ class Subjectbox(QtGui.QGroupBox):
 
         self.start_stop_button = QtGui.QPushButton('Start')
         self.start_stop_button.setIcon(QtGui.QIcon("gui/icons/play.svg"))
+        self.start_stop_button.setStyleSheet("background-color:#68ff66;")
         self.start_stop_button.setEnabled(False)
         self.status_label = QtGui.QLabel('Status:')
         self.status_text = QtGui.QLineEdit()
@@ -501,6 +506,7 @@ class Subjectbox(QtGui.QGroupBox):
 
         self.start_stop_button.setText('Stop')
         self.start_stop_button.setIcon(QtGui.QIcon("gui/icons/stop.svg"))
+        self.start_stop_button.setStyleSheet("background-color:#ff6666;")
         self.run_exp_tab.setups_started += 1
 
         self.run_exp_tab.GUI_main.refresh_timer.stop()
@@ -521,6 +527,7 @@ class Subjectbox(QtGui.QGroupBox):
         self.state_text.setStyleSheet('color: grey;') 
         self.status_text.setText('Stopped')
         self.start_stop_button.setEnabled(False)
+        self.start_stop_button.setStyleSheet("background-color:none;")
         self.run_exp_tab.experiment_plot.active_plots.remove(self.setup_number)
         self.run_exp_tab.setups_finished += 1
         self.variables_button.setEnabled(False)
