@@ -4,7 +4,7 @@ import numpy as np
 import os
 from config.paths import dirs
 
-cleaner_version = 2020111600 ## YearMonthDayRevision YYYYMMDDrr  can have up to 100 revisions/day
+cleaner_version = 2021031000 ## YearMonthDayRevision YYYYMMDDrr  can have up to 100 revisions/day
 
 class Log_cleaner():
     def __init__(self,file_path):
@@ -76,7 +76,7 @@ class Log_cleaner():
         if task == 'markov':
             self.rslt_data.rename(columns={1:'Trial',2:'Left_prob',3:'Right_prob',4:'Choice_ltr',5:'Outcome',6:'LaserTrial'},inplace=True)
         elif task == 'sequence':
-            self.rslt_data.rename(columns={1:'Trial',2:'Seq_raw',3:'Choice_ltr',4:'Outcome',5:'Abandoned',6:'Reward_vol',7:'Center_hold',8:'Side_delay'},inplace=True)
+            self.rslt_data.rename(columns={1:'Trial',2:'Seq_raw',3:'Choice_ltr',4:'Outcome',5:'Abandoned',6:'Reward_vol',7:'Center_hold',8:'Side_delay',9:'Faulty_chance',10:'Max_consecutive_faulty',11:'Faulty_time_limit'},inplace=True)
         self.rslt_data.reset_index(drop=True,inplace=True)
 
     def expand_results(self,task):
@@ -122,16 +122,18 @@ class Log_cleaner():
             predicted_mask   = self.rslt_data['Outcome']=='P'
             withheld_mask    = self.rslt_data['Outcome']=='W'
             correct_mask     = self.rslt_data['Outcome']=='C' # rewarded
+            faulty_mask      = self.rslt_data['Outcome']=='F' 
 
             correct_sequence_mask = withheld_mask|correct_mask
             reward_dispensed_mask = (correct_mask|background_mask)&~abandoned_mask
 
-            outcome_truth_table = pd.DataFrame(np.zeros((len(self.rslt_data), 5),dtype=int),
-                        columns=['Seq_int','Seq_length','Left_choice','Seq_completed','Reward_dispensed'])
+            outcome_truth_table = pd.DataFrame(np.zeros((len(self.rslt_data), 6),dtype=int),
+                        columns=['Seq_int','Seq_length','Left_choice','Seq_completed','Reward_dispensed','Faulty_choice'])
 
             outcome_truth_table.loc[correct_sequence_mask,'Seq_completed']=1
             outcome_truth_table.loc[reward_dispensed_mask,'Reward_dispensed']=1
             outcome_truth_table.loc[left_mask,'Left_choice']=1
+            outcome_truth_table.loc[faulty_mask,'Faulty_choice']=1
 
             def seq_to_int(sequence):
                 seq = sequence.replace('L','1').replace('R','0')
@@ -141,7 +143,7 @@ class Log_cleaner():
             outcome_truth_table['Seq_length'] = self.rslt_data['Seq_raw'].apply(len)
 
             self.combined = pd.concat([self.rslt_data, outcome_truth_table], axis=1)
-            self.combined = self.combined[['Trial','Reward_vol','Center_hold','Side_delay','Seq_raw','Seq_int','Seq_length','Choice_ltr','Outcome','Left_choice','Seq_completed','Abandoned','Reward_dispensed']] # reorder columns
+            self.combined = self.combined[['Trial','Reward_vol','Center_hold','Side_delay','Faulty_chance','Max_consecutive_faulty','Faulty_time_limit','Seq_raw','Seq_int','Seq_length','Choice_ltr','Outcome','Left_choice','Seq_completed','Abandoned','Reward_dispensed','Faulty_choice']] # reorder columns
     
     def save_json(self):
         import json
