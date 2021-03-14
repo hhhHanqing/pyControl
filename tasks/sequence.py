@@ -2,7 +2,7 @@ from pyControl.utility import *
 from pyControl.competitor import *
 import hardware_definition as hw
 
-version = 2021022200 ## YearMonthDayRevision YYYYMMDDrr  can have up to 100 revisions/day
+version = 2021031400 ## YearMonthDayRevision YYYYMMDDrr  can have up to 100 revisions/day
 states= [
     'wait_for_center',
     'wait_for_choice',
@@ -40,7 +40,7 @@ v.sequence_array_text = "LLR-RRL"
 v.bout_mean = 175
 v.bout_sd = 25
 v.trials_until_change = 0
-v.tone_on = True
+v.tone_on = False
 
 ### Reward Variables
 v.reward_seq___ = 'LLR'
