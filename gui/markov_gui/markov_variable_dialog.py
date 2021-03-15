@@ -150,5 +150,8 @@ class Markov_GUI(QtGui.QWidget):
 
     def update_tone(self):
         self.tone_duration.setEnabled(not self.tone_checkbox.isChecked())
-        if self.board.framework_running:
-            self.board.set_variable('continuous_tone',self.tone_checkbox.isChecked())
+        self.board.set_variable('continuous_tone',self.tone_checkbox.isChecked())
+        if not self.board.framework_running:
+            msg = QtGui.QMessageBox()
+            msg.setText("Variable Changed")
+            msg.exec()

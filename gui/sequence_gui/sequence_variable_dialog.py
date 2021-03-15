@@ -173,8 +173,11 @@ class Sequence_GUI(QtGui.QWidget):
 
     def update_center(self):
         self.show_center_options()
-        if self.board.framework_running: # Value returned later.
-            self.board.set_variable('center_hold_constant',self.constant_center_radio.isChecked())
+        self.board.set_variable('center_hold_constant',self.constant_center_radio.isChecked())
+        if not self.board.framework_running: # Value returned later.
+            msg = QtGui.QMessageBox()
+            msg.setText("Variable Changed")
+            msg.exec()
 
     def show_center_options(self):
         self.center_delay.setEnabled(self.constant_center_radio.isChecked())
@@ -184,8 +187,11 @@ class Sequence_GUI(QtGui.QWidget):
 
     def update_side(self):
         self.show_side_options()
-        if self.board.framework_running: # Value returned later.
-            self.board.set_variable('side_delay_constant',self.constant_side_radio.isChecked())
+        self.board.set_variable('side_delay_constant',self.constant_side_radio.isChecked())
+        if not self.board.framework_running: # Value returned later.
+            msg = QtGui.QMessageBox()
+            msg.setText("Variable Changed")
+            msg.exec()
 
     def show_side_options(self):
         self.side_delay.setEnabled(self.constant_side_radio.isChecked())
@@ -194,5 +200,8 @@ class Sequence_GUI(QtGui.QWidget):
         self.side_max.setEnabled(not self.constant_side_radio.isChecked())
 
     def update_tone(self):
-        if self.board.framework_running: # Value returned later.
-            self.board.set_variable('tone_on',self.tone_checkbox.isChecked()) 
+        self.board.set_variable('tone_on',self.tone_checkbox.isChecked()) 
+        if not self.board.framework_running: # Value returned later.
+            msg = QtGui.QMessageBox()
+            msg.setText("Variable Changed")
+            msg.exec()
