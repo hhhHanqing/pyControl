@@ -34,15 +34,12 @@ class Run_experiment_tab(QtGui.QWidget):
         self.plots_button =  QtGui.QPushButton('Show plots')
         self.plots_button.setIcon(QtGui.QIcon("gui/icons/bar-graph.svg"))
         self.plots_button.clicked.connect(self.experiment_plot.show)
-        self.logs_button = QtGui.QPushButton('Hide logs')
-        self.logs_button.clicked.connect(self.show_hide_logs)    
         self.startstopclose_all_button = QtGui.QPushButton()
         self.startstopclose_all_button.clicked.connect(self.startstopclose_all)
 
         self.Hlayout = QtGui.QHBoxLayout()
         self.Hlayout.addWidget(self.name_label)
         self.Hlayout.addWidget(self.name_text)
-        self.Hlayout.addWidget(self.logs_button)
         self.Hlayout.addWidget(self.plots_button)
         self.Hlayout.addWidget(self.startstopclose_all_button)
 
@@ -165,15 +162,12 @@ class Run_experiment_tab(QtGui.QWidget):
         self.GUI_main.tab_widget.setTabEnabled(2, False)  # Disable setups tab.
         self.GUI_main.experiments_tab.setCurrentWidget(self)
         self.experiment_plot.setup_experiment(experiment)
-        self.logs_visible = True
-        self.logs_button.setText('Hide logs')
         self.startstopclose_all_button.setText('Start All')
         self.startstopclose_all_button.setIcon(QtGui.QIcon("gui/icons/play.svg"))
         self.startstopclose_all_button.setStyleSheet("background-color:#68ff66")
         # Setup controls box.
         self.name_text.setText(experiment['name'])
         self.startstopclose_all_button.setEnabled(False)
-        self.logs_button.setEnabled(False)
         self.plots_button.setEnabled(False)
         # Setup subjectboxes
         self.subjects = list(experiment['subjects'].keys())
@@ -245,7 +239,6 @@ class Run_experiment_tab(QtGui.QWidget):
             self.subjectboxes[i].start_stop_button.setEnabled(True)
         self.experiment_plot.set_state_machine(board.sm_info)
         self.startstopclose_all_button.setEnabled(True)
-        self.logs_button.setEnabled(True)
         self.plots_button.setEnabled(True)
         self.setups_started  = 0
         self.setups_finished = 0
@@ -347,23 +340,6 @@ class Run_experiment_tab(QtGui.QWidget):
             subjectbox = self.subjectboxes.pop() 
             subjectbox.setParent(None)
             subjectbox.deleteLater()
-        if not self.logs_visible:
-            self.boxes_layout.takeAt(self.boxes_layout.count()-1) # Remove stretch.
-
-    def show_hide_logs(self):
-        '''Show/hide the log textboxes in subjectboxes.'''
-        if self.logs_visible:
-            for subjectbox in self.subjectboxes:
-                subjectbox.log_textbox.hide()
-            # self.boxes_layout.addStretch(100)
-            self.logs_visible = False
-            self.logs_button.setText('Show logs')
-        else:
-            for subjectbox in self.subjectboxes:
-                subjectbox.log_textbox.show()
-            # self.boxes_layout.takeAt(self.boxes_layout.count()-1) # Remove stretch.
-            self.logs_visible = True
-            self.logs_button.setText('Hide logs')
 
     def update(self):
         '''Called regularly while experiment is running'''
