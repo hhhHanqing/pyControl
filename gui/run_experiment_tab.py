@@ -387,6 +387,7 @@ class Subjectbox(QtGui.QGroupBox):
         self.variables_button.setEnabled(False)
         self.log_textbox = QtGui.QTextEdit()
         self.log_textbox.setMinimumHeight(180)
+        self.log_textbox.setMinimumWidth(500)
         self.log_textbox.setFont(QtGui.QFont('Courier', 9))
         self.log_textbox.setReadOnly(True)
 
