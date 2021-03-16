@@ -237,6 +237,10 @@ class Run_experiment_tab(QtGui.QWidget):
         for i, board in enumerate(self.boards):
             self.subjectboxes[i].assign_board(board)
             self.subjectboxes[i].start_stop_button.setEnabled(True)
+            self.subjectboxes[i].switch_view()
+            self.subjectboxes[i].start_stop_button.setText('Start')
+            self.subjectboxes[i].start_stop_button.setIcon(QtGui.QIcon("gui/icons/play.svg"))
+            self.subjectboxes[i].start_stop_button.setStyleSheet("background-color:#68ff66;")
         self.experiment_plot.set_state_machine(board.sm_info)
         self.startstopclose_all_button.setEnabled(True)
         self.plots_button.setEnabled(True)
@@ -373,9 +377,7 @@ class Subjectbox(QtGui.QGroupBox):
         self.boxTitle = QtGui.QLabel(name)
         self.boxTitle.setStyleSheet("font:20pt;color:blue;")
 
-        self.start_stop_button = QtGui.QPushButton('Start')
-        self.start_stop_button.setIcon(QtGui.QIcon("gui/icons/play.svg"))
-        self.start_stop_button.setStyleSheet("background-color:#68ff66;")
+        self.start_stop_button = QtGui.QPushButton('Loading task...')
         self.start_stop_button.setEnabled(False)
         self.time_label = QtGui.QLabel('Time:')
         self.time_text = QtGui.QLineEdit()
@@ -483,9 +485,11 @@ class Subjectbox(QtGui.QGroupBox):
         self.start_stop_button.setStyleSheet("background-color:none;")
         self.run_exp_tab.experiment_plot.active_plots.remove(self.setup_number)
         self.run_exp_tab.setups_finished += 1
-        self.variables_button.setEnabled(False)
         self.run_exp_tab.update_startstopclose_button()
         self.boxTitle.setStyleSheet("font:20pt;color:grey;")
+        self.variables_box.setEnabled(False)
+        self.vars_visible = True
+        self.switch_view()
 
     def update(self):
         '''Called regularly while experiment is running.'''
