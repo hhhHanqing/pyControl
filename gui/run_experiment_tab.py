@@ -388,15 +388,17 @@ class Subjectbox(QtGui.QGroupBox):
         self.log_textbox.setFont(QtGui.QFont('Courier', 9))
         self.log_textbox.setReadOnly(True)
 
-        self.Vlayout = QtGui.QVBoxLayout(self)
-        self.Hlayout = QtGui.QHBoxLayout()
-        self.Hlayout.addWidget(self.boxTitle)
-        self.Hlayout.addWidget(self.start_stop_button)
-        self.Hlayout.addWidget(self.variables_button)
-        self.Hlayout.addWidget(self.time_label)
-        self.Hlayout.addWidget(self.time_text)
-        self.Vlayout.addLayout(self.Hlayout)
-        self.Vlayout.addWidget(self.log_textbox)
+        self.subjectGridLayout = QtGui.QGridLayout(self)
+        self.subjectHeaderLayout = QtGui.QGridLayout()
+        self.subjectHeaderLayout.addWidget(self.boxTitle,0,1)
+        self.subjectHeaderLayout.addWidget(self.time_label,0,2,QtCore.Qt.AlignRight)
+        self.subjectHeaderLayout.addWidget(self.time_text,0,3,QtCore.Qt.AlignLeft)
+        self.subjectHeaderLayout.addWidget(self.variables_button,0,4)
+        self.subjectHeaderLayout.addWidget(self.start_stop_button,0,5)
+        self.subjectHeaderLayout.setColumnStretch(0,1)
+        self.subjectHeaderLayout.setColumnStretch(6,1)
+        self.subjectGridLayout.addLayout(self.subjectHeaderLayout,0,0,1,2)
+        self.subjectGridLayout.addWidget(self.log_textbox,1,0,1,2)
         
     def print_to_log(self, print_string, end='\n'):
         if self.delay_printing:
@@ -429,7 +431,7 @@ class Subjectbox(QtGui.QGroupBox):
         self.board.data_logger.data_consumers.append(self.variables_dialog)
         self.variables_box= QtGui.QWidget()
         self.variables_box.setLayout(self.variables_dialog.layout)
-        self.Vlayout.addWidget(self.variables_box)
+        self.subjectGridLayout.addWidget(self.variables_box,2,0,1,2)
         self.vars_visible = False
         self.variables_box.setVisible(self.vars_visible)
         self.variables_button.clicked.connect(self.switch_view)
