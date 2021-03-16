@@ -431,7 +431,7 @@ class Subjectbox(QtGui.QGroupBox):
         self.board.data_logger.data_consumers.append(self.variables_dialog)
         self.variables_box= QtGui.QWidget()
         self.variables_box.setLayout(self.variables_dialog.layout)
-        self.subjectGridLayout.addWidget(self.variables_box,2,0,1,2)
+        self.subjectGridLayout.addWidget(self.variables_box,2,0,1,2,QtCore.Qt.AlignHCenter)
         self.vars_visible = False
         self.variables_box.setVisible(self.vars_visible)
         self.variables_button.clicked.connect(self.switch_view)
