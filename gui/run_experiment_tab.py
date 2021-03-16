@@ -405,8 +405,7 @@ class Subjectbox(QtGui.QGroupBox):
         self.time_text = QtGui.QLineEdit()
         self.time_text.setReadOnly(True)
         self.time_text.setFixedWidth(60)
-        self.variables_button = QtGui.QPushButton('Variables')
-        self.variables_button.setIcon(QtGui.QIcon("gui/icons/filter.svg"))
+        self.variables_button = QtGui.QPushButton('Show Variables')
         self.variables_button.setEnabled(False)
         self.log_textbox = QtGui.QTextEdit()
         self.log_textbox.setMinimumHeight(180)
@@ -451,10 +450,16 @@ class Subjectbox(QtGui.QGroupBox):
             self.variables_dialog = Sequence_Variables_dialog(self, self.board)
         else:
             self.variables_dialog = Variables_dialog(self, self.board)
-        self.variables_button.clicked.connect(self.variables_dialog.exec_)
+        self.board.data_logger.data_consumers.append(self.variables_dialog)
+        self.variables_box= QtGui.QWidget()
+        self.variables_box.setLayout(self.variables_dialog.layout)
+        self.Vlayout.addWidget(self.variables_box)
+        self.vars_visible = False
+        self.variables_box.setVisible(self.vars_visible)
+        self.variables_button.clicked.connect(self.switch_view)
         self.variables_button.setEnabled(True)
         self.start_stop_button.clicked.connect(self.start_stop_task)
-
+    
     def start_stop_task(self):
         '''Called when start/stop button on Subjectbox pressed or
         startstopclose_all button is pressed.'''
@@ -515,3 +520,13 @@ class Subjectbox(QtGui.QGroupBox):
             except PyboardError:
                 self.stop_task()
                 self.error()
+
+    def switch_view(self):
+        '''Switch between viewing data log and variables.'''
+        self.vars_visible = not self.vars_visible
+        if self.vars_visible:
+            self.variables_button.setText('Show Data Log')
+        else:
+            self.variables_button.setText('Show Variables')
+        self.variables_box.setVisible(self.vars_visible)
+        self.log_textbox.setVisible(not self.vars_visible)
