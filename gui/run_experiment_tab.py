@@ -250,7 +250,7 @@ class Run_experiment_tab(QtGui.QWidget):
     def startstopclose_all(self):
         '''Called when startstopclose_all_button is clicked.  Button is 
         only active if all setups are in the same state.'''
-        if self.startstopclose_all_button.text() == 'Close Exp.':
+        if self.startstopclose_all_button.text() == 'Close Experiment':
             self.close_experiment()
         elif self.startstopclose_all_button.text() == 'Start All':
             for i, board in enumerate(self.boards):
@@ -263,7 +263,7 @@ class Run_experiment_tab(QtGui.QWidget):
         '''Called when a setup is started or stopped to update the
         startstopclose_all button.'''
         if self.setups_finished == len(self.boards):
-            self.startstopclose_all_button.setText('Close Exp.')
+            self.startstopclose_all_button.setText('Close Experiment')
             self.startstopclose_all_button.setIcon(QtGui.QIcon("gui/icons/close.svg"))
             self.startstopclose_all_button.setStyleSheet("background-color:none;")
         else:
@@ -375,7 +375,7 @@ class Subjectbox(QtGui.QGroupBox):
         self.delay_printing = False
 
         self.boxTitle = QtGui.QLabel(name)
-        self.boxTitle.setStyleSheet("font:20pt;color:blue;")
+        self.boxTitle.setStyleSheet("font:16pt;color:blue;")
 
         self.start_stop_button = QtGui.QPushButton('Loading task...')
         self.start_stop_button.setEnabled(False)
@@ -486,7 +486,7 @@ class Subjectbox(QtGui.QGroupBox):
         self.run_exp_tab.experiment_plot.active_plots.remove(self.setup_number)
         self.run_exp_tab.setups_finished += 1
         self.run_exp_tab.update_startstopclose_button()
-        self.boxTitle.setStyleSheet("font:20pt;color:grey;")
+        self.boxTitle.setStyleSheet("font:16pt;color:grey;")
         self.variables_box.setEnabled(False)
         self.vars_visible = True
         self.switch_view()
