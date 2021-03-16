@@ -15,6 +15,8 @@ from com.data_logger import Data_logger
 from gui.plotting import Experiment_plot
 from gui.dialogs import Variables_dialog, Summary_variables_dialog
 from gui.utility import variable_constants
+from gui.markov_gui.markov_variable_dialog import *
+from gui.sequence_gui.sequence_variable_dialog import *
 
 class Run_experiment_tab(QtGui.QWidget):
     '''The run experiment tab is responsible for setting up, running and stopping
@@ -32,22 +34,19 @@ class Run_experiment_tab(QtGui.QWidget):
         self.plots_button =  QtGui.QPushButton('Show plots')
         self.plots_button.setIcon(QtGui.QIcon("gui/icons/bar-graph.svg"))
         self.plots_button.clicked.connect(self.experiment_plot.show)
-        self.logs_button = QtGui.QPushButton('Hide logs')
-        self.logs_button.clicked.connect(self.show_hide_logs)    
         self.startstopclose_all_button = QtGui.QPushButton()
         self.startstopclose_all_button.clicked.connect(self.startstopclose_all)
 
         self.Hlayout = QtGui.QHBoxLayout()
         self.Hlayout.addWidget(self.name_label)
         self.Hlayout.addWidget(self.name_text)
-        self.Hlayout.addWidget(self.logs_button)
         self.Hlayout.addWidget(self.plots_button)
         self.Hlayout.addWidget(self.startstopclose_all_button)
 
         self.scroll_area = QtGui.QScrollArea(parent=self)
-        self.scroll_area.horizontalScrollBar().setEnabled(False)
+        # self.scroll_area.horizontalScrollBar().setEnabled(False)
         self.scroll_inner = QtGui.QFrame(self)
-        self.boxes_layout = QtGui.QVBoxLayout(self.scroll_inner)
+        self.boxes_layout = QtGui.QGridLayout(self.scroll_inner)
         self.scroll_area.setWidget(self.scroll_inner)
         self.scroll_area.setWidgetResizable(True)
 
@@ -113,7 +112,7 @@ class Run_experiment_tab(QtGui.QWidget):
         # Setup task state machine.
         try:
             board.data_logger = Data_logger(print_func=board.print, data_consumers=
-                [self.experiment_plot.subject_plots[i], self.subjectboxes[i]])
+                [self.experiment_plot.subject_plots[i]])
             board.setup_state_machine(self.experiment['task'])
         except PyboardError:
             self.setup_failed[i] = True
@@ -163,22 +162,26 @@ class Run_experiment_tab(QtGui.QWidget):
         self.GUI_main.tab_widget.setTabEnabled(2, False)  # Disable setups tab.
         self.GUI_main.experiments_tab.setCurrentWidget(self)
         self.experiment_plot.setup_experiment(experiment)
-        self.logs_visible = True
-        self.logs_button.setText('Hide logs')
         self.startstopclose_all_button.setText('Start All')
         self.startstopclose_all_button.setIcon(QtGui.QIcon("gui/icons/play.svg"))
+        self.startstopclose_all_button.setStyleSheet("background-color:#68ff66")
         # Setup controls box.
         self.name_text.setText(experiment['name'])
         self.startstopclose_all_button.setEnabled(False)
-        self.logs_button.setEnabled(False)
         self.plots_button.setEnabled(False)
         # Setup subjectboxes
         self.subjects = list(experiment['subjects'].keys())
         self.subjects.sort(key=lambda s: experiment['subjects'][s]['setup'])
         for i,subject in enumerate(self.subjects):
             self.subjectboxes.append(
-                Subjectbox('{} : {}'.format(experiment['subjects'][subject]['setup'], subject), i, self))
+                Subjectbox('{} --- {}'.format(experiment['subjects'][subject]['setup'], subject), i, self))
             self.boxes_layout.addWidget(self.subjectboxes[-1])
+            position = int(experiment['subjects'][subject]['setup'].split('.')[-1])-1
+            if position<3:
+                row = 0
+            else:
+                row = 1
+            self.boxes_layout.addWidget(self.subjectboxes[-1],row,position-3*row)
         # Create data folder if needed.
         if not os.path.exists(self.experiment['data_dir']):
             os.mkdir(self.experiment['data_dir'])        
@@ -234,10 +237,12 @@ class Run_experiment_tab(QtGui.QWidget):
         for i, board in enumerate(self.boards):
             self.subjectboxes[i].assign_board(board)
             self.subjectboxes[i].start_stop_button.setEnabled(True)
-            self.subjectboxes[i].status_text.setText('Ready')
+            self.subjectboxes[i].switch_view()
+            self.subjectboxes[i].start_stop_button.setText('Start')
+            self.subjectboxes[i].start_stop_button.setIcon(QtGui.QIcon("gui/icons/play.svg"))
+            self.subjectboxes[i].start_stop_button.setStyleSheet("background-color:#68ff66;")
         self.experiment_plot.set_state_machine(board.sm_info)
         self.startstopclose_all_button.setEnabled(True)
-        self.logs_button.setEnabled(True)
         self.plots_button.setEnabled(True)
         self.setups_started  = 0
         self.setups_finished = 0
@@ -245,7 +250,7 @@ class Run_experiment_tab(QtGui.QWidget):
     def startstopclose_all(self):
         '''Called when startstopclose_all_button is clicked.  Button is 
         only active if all setups are in the same state.'''
-        if self.startstopclose_all_button.text() == 'Close Exp.':
+        if self.startstopclose_all_button.text() == 'Close Experiment':
             self.close_experiment()
         elif self.startstopclose_all_button.text() == 'Start All':
             for i, board in enumerate(self.boards):
@@ -258,15 +263,18 @@ class Run_experiment_tab(QtGui.QWidget):
         '''Called when a setup is started or stopped to update the
         startstopclose_all button.'''
         if self.setups_finished == len(self.boards):
-            self.startstopclose_all_button.setText('Close Exp.')
+            self.startstopclose_all_button.setText('Close Experiment')
             self.startstopclose_all_button.setIcon(QtGui.QIcon("gui/icons/close.svg"))
+            self.startstopclose_all_button.setStyleSheet("background-color:none;")
         else:
             self.startstopclose_all_button.setText('Stop All')
             self.startstopclose_all_button.setIcon(QtGui.QIcon("gui/icons/stop.svg"))
             if self.setups_started == len(self.boards) and self.setups_finished == 0:
                 self.startstopclose_all_button.setEnabled(True)
+                self.startstopclose_all_button.setStyleSheet("background-color:#ff6666;")
             else:
                 self.startstopclose_all_button.setEnabled(False)
+                self.startstopclose_all_button.setStyleSheet("background-color:none;")
 
     def stop_experiment(self):
         self.update_timer.stop()
@@ -336,23 +344,6 @@ class Run_experiment_tab(QtGui.QWidget):
             subjectbox = self.subjectboxes.pop() 
             subjectbox.setParent(None)
             subjectbox.deleteLater()
-        if not self.logs_visible:
-            self.boxes_layout.takeAt(self.boxes_layout.count()-1) # Remove stretch.
-
-    def show_hide_logs(self):
-        '''Show/hide the log textboxes in subjectboxes.'''
-        if self.logs_visible:
-            for subjectbox in self.subjectboxes:
-                subjectbox.log_textbox.hide()
-            self.boxes_layout.addStretch(100)
-            self.logs_visible = False
-            self.logs_button.setText('Show logs')
-        else:
-            for subjectbox in self.subjectboxes:
-                subjectbox.log_textbox.show()
-            self.boxes_layout.takeAt(self.boxes_layout.count()-1) # Remove stretch.
-            self.logs_visible = True
-            self.logs_button.setText('Hide logs')
 
     def update(self):
         '''Called regularly while experiment is running'''
@@ -374,7 +365,7 @@ class Subjectbox(QtGui.QGroupBox):
 
     def __init__(self, name, setup_number, parent=None):
 
-        super(QtGui.QGroupBox, self).__init__(name, parent=parent)
+        super(QtGui.QGroupBox, self).__init__("", parent=parent)
         self.board = None # Overwritten with board once instantiated.
         self.GUI_main = self.parent().GUI_main
         self.run_exp_tab = self.parent()
@@ -383,53 +374,33 @@ class Subjectbox(QtGui.QGroupBox):
         self.print_queue = []
         self.delay_printing = False
 
-        self.start_stop_button = QtGui.QPushButton('Start')
-        self.start_stop_button.setIcon(QtGui.QIcon("gui/icons/play.svg"))
+        self.boxTitle = QtGui.QLabel(name)
+        self.boxTitle.setStyleSheet("font:16pt;color:blue;")
+
+        self.start_stop_button = QtGui.QPushButton('Loading task...')
         self.start_stop_button.setEnabled(False)
-        self.status_label = QtGui.QLabel('Status:')
-        self.status_text = QtGui.QLineEdit()
-        self.status_text.setReadOnly(True)
-        self.status_text.setFixedWidth(60)
         self.time_label = QtGui.QLabel('Time:')
         self.time_text = QtGui.QLineEdit()
         self.time_text.setReadOnly(True)
         self.time_text.setFixedWidth(60)
-        self.state_label = QtGui.QLabel('State:')
-        self.state_text = QtGui.QLineEdit()
-        self.state_text.setFixedWidth(140)
-        self.state_text.setReadOnly(True)
-        self.event_label = QtGui.QLabel('Event:')
-        self.event_text = QtGui.QLineEdit()
-        self.event_text.setReadOnly(True)
-        self.event_text.setFixedWidth(140)
-        self.print_label = QtGui.QLabel('Print:')
-        self.print_text = QtGui.QLineEdit()
-        self.print_text.setReadOnly(True)
-        self.variables_button = QtGui.QPushButton('Variables')
-        self.variables_button.setIcon(QtGui.QIcon("gui/icons/filter.svg"))
+        self.variables_button = QtGui.QPushButton('Show Variables')
         self.variables_button.setEnabled(False)
         self.log_textbox = QtGui.QTextEdit()
         self.log_textbox.setMinimumHeight(180)
         self.log_textbox.setFont(QtGui.QFont('Courier', 9))
         self.log_textbox.setReadOnly(True)
 
-        self.Vlayout = QtGui.QVBoxLayout(self)
-        self.Hlayout = QtGui.QHBoxLayout()
-        self.Hlayout.addWidget(self.start_stop_button)
-        self.Hlayout.addWidget(self.variables_button)
-        self.Hlayout.addWidget(self.status_label)
-        self.Hlayout.addWidget(self.status_text)
-        self.Hlayout.addWidget(self.time_label)
-        self.Hlayout.addWidget(self.time_text)
-        self.Hlayout.addWidget(self.state_label)
-        self.Hlayout.addWidget(self.state_text)
-        self.Hlayout.addWidget(self.event_label)
-        self.Hlayout.addWidget(self.event_text)
-        self.Hlayout.addWidget(self.print_label)
-        self.Hlayout.addWidget(self.print_text)
-        self.Hlayout.setStretchFactor(self.print_text, 10)
-        self.Vlayout.addLayout(self.Hlayout)
-        self.Vlayout.addWidget(self.log_textbox)
+        self.subjectGridLayout = QtGui.QGridLayout(self)
+        self.subjectHeaderLayout = QtGui.QGridLayout()
+        self.subjectHeaderLayout.addWidget(self.boxTitle,0,1)
+        self.subjectHeaderLayout.addWidget(self.time_label,0,2,QtCore.Qt.AlignRight)
+        self.subjectHeaderLayout.addWidget(self.time_text,0,3,QtCore.Qt.AlignLeft)
+        self.subjectHeaderLayout.addWidget(self.variables_button,0,4)
+        self.subjectHeaderLayout.addWidget(self.start_stop_button,0,5)
+        self.subjectHeaderLayout.setColumnStretch(0,1)
+        self.subjectHeaderLayout.setColumnStretch(6,1)
+        self.subjectGridLayout.addLayout(self.subjectHeaderLayout,0,0,1,2)
+        self.subjectGridLayout.addWidget(self.log_textbox,1,0,1,2)
         
     def print_to_log(self, print_string, end='\n'):
         if self.delay_printing:
@@ -453,11 +424,22 @@ class Subjectbox(QtGui.QGroupBox):
 
     def assign_board(self, board):
         self.board = board
-        self.variables_dialog = Variables_dialog(self, board)
-        self.variables_button.clicked.connect(self.variables_dialog.exec_)
+        if self.board.sm_info['name'] == 'markov':
+            self.variables_dialog = Markov_Variables_dialog(self, self.board)
+        elif self.board.sm_info['name'] == 'sequence':
+            self.variables_dialog = Sequence_Variables_dialog(self, self.board)
+        else:
+            self.variables_dialog = Variables_dialog(self, self.board)
+        self.board.data_logger.data_consumers.append(self.variables_dialog)
+        self.variables_box= QtGui.QWidget()
+        self.variables_box.setLayout(self.variables_dialog.layout)
+        self.subjectGridLayout.addWidget(self.variables_box,2,0,1,2,QtCore.Qt.AlignHCenter)
+        self.vars_visible = False
+        self.variables_box.setVisible(self.vars_visible)
+        self.variables_button.clicked.connect(self.switch_view)
         self.variables_button.setEnabled(True)
         self.start_stop_button.clicked.connect(self.start_stop_task)
-
+    
     def start_stop_task(self):
         '''Called when start/stop button on Subjectbox pressed or
         startstopclose_all button is pressed.'''
@@ -468,7 +450,6 @@ class Subjectbox(QtGui.QGroupBox):
 
     def start_task(self):
         '''Start the task running on the Subjectbox's board.'''
-        self.status_text.setText('Running')
         self.state = 'running'
         self.run_exp_tab.experiment_plot.start_experiment(self.setup_number)
         self.start_time = datetime.now()
@@ -484,6 +465,7 @@ class Subjectbox(QtGui.QGroupBox):
 
         self.start_stop_button.setText('Stop')
         self.start_stop_button.setIcon(QtGui.QIcon("gui/icons/stop.svg"))
+        self.start_stop_button.setStyleSheet("background-color:#ff6666;")
         self.run_exp_tab.setups_started += 1
 
         self.run_exp_tab.GUI_main.refresh_timer.stop()
@@ -492,21 +474,22 @@ class Subjectbox(QtGui.QGroupBox):
 
     def error(self):
         '''Set state text to error in red.'''
-        self.status_text.setText('Error')
-        self.status_text.setStyleSheet('color: red;')
+        # self.status_text.setText('Error')
+        # self.status_text.setStyleSheet('color: red;')
 
     def stop_task(self):
         '''Called to stop task or if task stops automatically.'''
         if self.board.framework_running:
             self.board.stop_framework()
-        self.state_text.setText('Stopped')
-        self.state_text.setStyleSheet('color: grey;') 
-        self.status_text.setText('Stopped')
         self.start_stop_button.setEnabled(False)
+        self.start_stop_button.setStyleSheet("background-color:none;")
         self.run_exp_tab.experiment_plot.active_plots.remove(self.setup_number)
         self.run_exp_tab.setups_finished += 1
-        self.variables_button.setEnabled(False)
         self.run_exp_tab.update_startstopclose_button()
+        self.boxTitle.setStyleSheet("font:16pt;color:grey;")
+        self.variables_box.setEnabled(False)
+        self.vars_visible = True
+        self.switch_view()
 
     def update(self):
         '''Called regularly while experiment is running.'''
@@ -520,25 +503,12 @@ class Subjectbox(QtGui.QGroupBox):
                 self.stop_task()
                 self.error()
 
-    def process_data(self, new_data):
-        '''Update the state, event and print line info.'''
-        try:
-            new_state = next(self.board.sm_info['ID2name'][nd[2]] for nd in reversed(new_data)
-                if nd[0] == 'D' and nd[2] in self.board.sm_info['states'].values())
-            self.state_text.setText(new_state)
-            self.state_text.home(False)
-        except StopIteration:
-            pass
-        try:
-            new_event = next(self.board.sm_info['ID2name'][nd[2]] for nd in reversed(new_data)
-                if nd[0] == 'D' and nd[2] in self.board.sm_info['events'].values())
-            self.event_text.setText(new_event)
-            self.event_text.home(False)
-        except StopIteration:
-            pass
-        try:
-            new_print = next(nd[2] for nd in reversed(new_data) if nd[0] == 'P')
-            self.print_text.setText(new_print)
-            self.print_text.home(False)
-        except StopIteration:
-            pass
+    def switch_view(self):
+        '''Switch between viewing data log and variables.'''
+        self.vars_visible = not self.vars_visible
+        if self.vars_visible:
+            self.variables_button.setText('Show Data Log')
+        else:
+            self.variables_button.setText('Show Variables')
+        self.variables_box.setVisible(self.vars_visible)
+        self.log_textbox.setVisible(not self.vars_visible)
