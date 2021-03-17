@@ -37,7 +37,7 @@ class Telegram():
             self.remove_msg(self.button_menu_msg_id)
 
         if self.active_rigs_dict:
-            title = "click rig button below to get updates"
+            title = "Click rig button below to get animal specific updates"
             btn_id = self.rigBot.send_message(chat_id=self.chat_id, text=title, reply_markup=button_markup)
             self.button_menu_msg_id = btn_id['message_id']
 
@@ -60,5 +60,5 @@ class Telegram():
             msg = \
                 f"<u><b>{rig.boxTitle.text()}</b></u>\n\n" \
                 f"⏱️ Time = {rig.time_text.text()}\n" \
-                f"✅ Correct = There haven't been any trials yet"
+                f"✅ Correct = There haven't been any completed trials yet"
         self.notify(msg)

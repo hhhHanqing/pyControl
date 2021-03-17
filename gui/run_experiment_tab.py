@@ -17,6 +17,7 @@ from gui.dialogs import Variables_dialog, Summary_variables_dialog
 from gui.utility import variable_constants
 from gui.markov_gui.markov_variable_dialog import *
 from gui.sequence_gui.sequence_variable_dialog import *
+from gui.telegram_notifications import *
 
 class Run_experiment_tab(QtGui.QWidget):
     '''The run experiment tab is responsible for setting up, running and stopping
@@ -169,6 +170,12 @@ class Run_experiment_tab(QtGui.QWidget):
         self.name_text.setText(experiment['name'])
         self.startstopclose_all_button.setEnabled(False)
         self.plots_button.setEnabled(False)
+        # Setup Telegram
+        telegram_json = self.get_settings_from_json()
+        if telegram_json['notifications_on']:
+            self.telegrammer = Telegram(self.subjectboxes,telegram_json['bot_token'],telegram_json['chat_id'])
+        else:
+            self.telegrammer = None
         # Setup subjectboxes
         self.subjects = list(experiment['subjects'].keys())
         self.subjects.sort(key=lambda s: experiment['subjects'][s]['setup'])
@@ -327,7 +334,9 @@ class Run_experiment_tab(QtGui.QWidget):
         msg.setText('An error occured while setting up experiment')
         msg.setIcon(QtGui.QMessageBox.Warning)
         msg.exec()
-        self.startstopclose_all_button.setText('Close Exp.')
+        self.startstopclose_all_button.setText('Close Experiment')
+        self.startstopclose_all_button.setIcon(QtGui.QIcon("gui/icons/close.svg"))
+        self.startstopclose_all_button.setStyleSheet("background-color:none;")
         self.startstopclose_all_button.setEnabled(True)
 
     def close_experiment(self):
@@ -344,6 +353,9 @@ class Run_experiment_tab(QtGui.QWidget):
             subjectbox = self.subjectboxes.pop() 
             subjectbox.setParent(None)
             subjectbox.deleteLater()
+        
+        if self.telegrammer:
+            self.telegrammer.updater.stop()
 
     def update(self):
         '''Called regularly while experiment is running'''
@@ -358,6 +370,14 @@ class Run_experiment_tab(QtGui.QWidget):
         for subjectbox in self.subjectboxes:
             subjectbox.print_to_log(print_str)
 
+    def get_settings_from_json(self):
+        json_path = os.path.join(dirs['config'],'telegram.json')
+        if os.path.exists(json_path):
+            with open(json_path,'r') as f:
+                telegram_settings = json.loads(f.read())
+        else:
+            telegram_settings = {} # missing json file
+        return telegram_settings
 # -----------------------------------------------------------------------------
 
 class Subjectbox(QtGui.QGroupBox):
@@ -371,6 +391,7 @@ class Subjectbox(QtGui.QGroupBox):
         self.run_exp_tab = self.parent()
         self.state = 'pre_run'
         self.setup_number = setup_number
+        self.parent_telegram = self.parent().telegrammer
         self.print_queue = []
         self.delay_printing = False
 
@@ -473,12 +494,13 @@ class Subjectbox(QtGui.QGroupBox):
         self.run_exp_tab.update_timer.start(update_interval)
         self.run_exp_tab.update_startstopclose_button()
 
-    def error(self):
-        '''Set state text to error in red.'''
-        # self.status_text.setText('Error')
-        # self.status_text.setStyleSheet('color: red;')
+        if self.parent_telegram:
+            self.parent_telegram.add_button(self.setup_number,self.boxTitle)
 
-    def stop_task(self):
+    def error(self):
+        pass
+
+    def stop_task(self,stopped_by_task=False):
         '''Called to stop task or if task stops automatically.'''
         if self.board.framework_running:
             self.board.stop_framework()
@@ -492,13 +514,20 @@ class Subjectbox(QtGui.QGroupBox):
         self.vars_visible = True
         self.switch_view()
 
+        if self.parent_telegram:
+            if stopped_by_task:
+                self.parent_telegram.notify(
+                    "<u><b>{}</b></u>\n\nSyringe empty, task stopped\nSession duration= {}".format(self.boxTitle.text(),self.time_text.text())
+                )
+            self.parent_telegram.remove_button(self.setup_number)
+
     def update(self):
         '''Called regularly while experiment is running.'''
         if self.board.framework_running:
             try:
                 self.board.process_data()
                 if not self.board.framework_running:
-                    self.stop_task()
+                    self.stop_task(stopped_by_task=True)
                 self.time_text.setText(str(datetime.now()-self.start_time).split('.')[0])
             except PyboardError:
                 self.stop_task()
