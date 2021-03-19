@@ -4,7 +4,7 @@ import numpy as np
 import os
 from config.paths import dirs
 
-cleaner_version = 2021031500 ## YearMonthDayRevision YYYYMMDDrr  can have up to 100 revisions/day
+cleaner_version = 2021031900 ## YearMonthDayRevision YYYYMMDDrr  can have up to 100 revisions/day
 
 class Log_cleaner():
     def __init__(self,file_path):
@@ -12,7 +12,8 @@ class Log_cleaner():
 
         session = di.Session(self.txt_file)
         self.session = session
-        self.session_name = session.file_name[:-4]
+        # Hanqing: I added the prefix here so that I don't need to update the task version
+        self.session_name = "pyLog_" + session.file_name[:-4]
 
         self.task_version = session.print_lines[0].split(",")[-1]
         for i,line in enumerate(session.print_lines):
