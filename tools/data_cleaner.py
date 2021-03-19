@@ -4,7 +4,7 @@ import numpy as np
 import os
 from config.paths import dirs
 
-cleaner_version = 2021031901 ## YearMonthDayRevision YYYYMMDDrr  can have up to 100 revisions/day
+cleaner_version = 2021031902 ## YearMonthDayRevision YYYYMMDDrr  can have up to 100 revisions/day
 
 class Log_cleaner():
     def __init__(self,file_path):
@@ -12,8 +12,7 @@ class Log_cleaner():
 
         session = di.Session(self.txt_file)
         self.session = session
-        # Hanqing: I added the prefix here so that I don't need to update the task version
-        self.session_name = "pyLog_" + session.file_name[:-4]
+        self.session_name = session.file_name[:-4]
 
         self.task_version = session.print_lines[0].split(",")[-1]
         for i,line in enumerate(session.print_lines):
@@ -183,7 +182,7 @@ class Log_cleaner():
             event_dictionary[event_type] = list(self.session.times[event_type])
         json_dictionary['Events'] = event_dictionary
 
-        saveName = os.path.join(self.data_folder_path,str(self.session.subject_ID),self.session_name+".json")
+        saveName = os.path.join(self.data_folder_path,str(self.session.subject_ID),"pyLog_"+self.session_name+".json")
         with open(saveName,'w') as f:
             json.dump(json_dictionary,f,cls=NpEncoder)
 
@@ -191,5 +190,5 @@ class Log_cleaner():
 
     def move_raw_txtfile(self):
         import shutil
-        text_in_raw_folder = os.path.join(self.data_folder_path,str(self.session.subject_ID),self.session_name+".txt")
+        text_in_raw_folder = os.path.join(self.data_folder_path,str(self.session.subject_ID),"pyControl_"+self.session_name+".txt")
         shutil.move(self.txt_file,text_in_raw_folder)

@@ -29,7 +29,6 @@ class Data_logger():
         self.subject_ID = subject_ID
         self.setup_ID = setup_ID
         if datetime_now is None: datetime_now = datetime.now()
-        # Hanqing: Or maybe I should add the prefix "pyLog_" here
         file_name = os.path.join(self.subject_ID + datetime_now.strftime('-%Y-%m-%d-%H%M%S') + '.txt')
         self.file_path = os.path.join(self.data_dir, file_name)
         self.data_file = open(self.file_path, 'w', newline = '\n')
