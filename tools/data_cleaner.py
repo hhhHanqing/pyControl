@@ -4,7 +4,7 @@ import numpy as np
 import os
 from config.paths import dirs
 
-cleaner_version = 2021031900 ## YearMonthDayRevision YYYYMMDDrr  can have up to 100 revisions/day
+cleaner_version = 2021031901 ## YearMonthDayRevision YYYYMMDDrr  can have up to 100 revisions/day
 
 class Log_cleaner():
     def __init__(self,file_path):
@@ -53,9 +53,12 @@ class Log_cleaner():
 
         new_bout_mask = print_DF['Msg']=='NB'
         if task == 'sequence':
-            self.new_bout_data = print_DF.iloc[:,0:5].copy()
-            self.new_bout_data = self.new_bout_data[new_bout_mask]
-            self.new_bout_data.rename(columns={1:'Reward_seq',2:'Bout_length',3:'Next_seq'},inplace=True)
+            if sum(new_bout_mask) == 0:
+                self.new_bout_data = pd.DataFrame(columns=['Timestamp', 'Msg', 'Reward_seq', 'Bout_length', 'Next_seq'])
+            else:
+                self.new_bout_data = print_DF.iloc[:,0:5].copy()
+                self.new_bout_data = self.new_bout_data[new_bout_mask]
+                self.new_bout_data.rename(columns={1:'Reward_seq',2:'Bout_length',3:'Next_seq'},inplace=True)
             self.new_bout_data.reset_index(drop=True,inplace=True)
 
         rslt_mask = print_DF['Msg']=='rslt'
@@ -63,7 +66,10 @@ class Log_cleaner():
         if task == 'markov':
             self.rslt_data.rename(columns={1:'Trial',2:'Left_prob',3:'Right_prob',4:'Choice_ltr',5:'Outcome',6:'LaserTrial'},inplace=True)
         elif task == 'sequence':
-            self.rslt_data.rename(columns={1:'Trial',2:'Seq_raw',3:'Choice_ltr',4:'Outcome',5:'Abandoned',6:'Reward_vol',7:'Center_hold',8:'Side_delay',9:'Faulty_chance',10:'Max_consecutive_faulty',11:'Faulty_time_limit'},inplace=True)
+            if sum(rslt_mask) == 0:
+                self.rslt_data = pd.DataFrame(columns=['Timestamp', 'Msg', 'Trial', 'Seq_raw', 'Choice_ltr', 'Outcome', 'Abandoned', 'Reward_vol', 'Center_hold', 'Side_delay', 'Faulty_chance', 'Max_consecutive_faulty', 'Faulty_time_limit'])
+            else:
+                self.rslt_data.rename(columns={1:'Trial',2:'Seq_raw',3:'Choice_ltr',4:'Outcome',5:'Abandoned',6:'Reward_vol',7:'Center_hold',8:'Side_delay',9:'Faulty_chance',10:'Max_consecutive_faulty',11:'Faulty_time_limit'},inplace=True)
         self.rslt_data.reset_index(drop=True,inplace=True)
 
     def expand_results(self,task):
@@ -100,6 +106,9 @@ class Log_cleaner():
 
         elif task == 'sequence':
             self.rslt_data.drop(columns=['Timestamp','Msg'],inplace=True)
+            if len(self.rslt_data) == 0:        # directly creat empty self.combined with the same structure
+               self.combined = pd.DataFrame(columns=['Trial','Reward_vol','Center_hold','Side_delay','Faulty_chance','Max_consecutive_faulty','Faulty_time_limit','Seq_raw','Seq_int','Seq_length','Choice_ltr','Outcome','Left_choice','Seq_completed','Abandoned','Reward_dispensed','Faulty_choice'])
+               return
 
             abandoned_mask = self.rslt_data['Abandoned']=='1'
             self.rslt_data['Abandoned'] = self.rslt_data['Abandoned'].astype(np.int64)
