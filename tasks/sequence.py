@@ -2,7 +2,7 @@ from pyControl.utility import *
 from pyControl.competitor import *
 import hardware_definition as hw
 
-version = 2021031400 ## YearMonthDayRevision YYYYMMDDrr  can have up to 100 revisions/day
+version = 2021032100 ## YearMonthDayRevision YYYYMMDDrr  can have up to 100 revisions/day
 states= [
     'wait_for_center',
     'wait_for_choice',
@@ -147,9 +147,9 @@ def wait_for_choice(event):
         hw.Lpoke.LED.on()
         v.trial_current_number___ += 1
     elif event == 'R_nose':
-        getOutcome('R')
+        getChoice('R')
     elif event == 'L_nose':
-        getOutcome('L')
+        getChoice('L')
     elif event == 'exit':
         if v.tone_on:
             hw.Speakers.beep()
@@ -161,8 +161,9 @@ def wait_for_outcome(event):
         set_timer('side_delay_timer', v.side_delay___, output_event=True)
     elif event == 'C_nose': # abandon the choice (don't wait for outcome)
         v.abandoned___ = True
+        v.outcome___ == 'A'     # need to deal with this outcome in downstream code
         v.in_center___ = True
-        publish_event('C_legit')
+        publish_event('C_legit')    # ! no faultiness after abandonment C_nose
         set_timer('held_long_enough',v.hold_center___, output_event=True) # create this timer. when it is done check if we're still inside the nosepoke, and if so then we've held our nose long enough and can move on to next state
         goto_state('wait_for_center')
     # timer events
@@ -272,28 +273,30 @@ def start_new_block ():
 
     print('NB,{},{},{}'.format(v.reward_seq___,v.trials_until_change,next_seq))
 
-def getOutcome(choice):
+def getChoice(choice):
     v.current_sequence = v.current_sequence[1:] + choice
     v.chosen_side___ = choice
 
     updateHold()
     updateSide()
-
-    ## set outcome variable
-    v.outcome___ = 'N' # not rewarded
-    if str(v.current_sequence[-len(v.reward_seq___):]) == str(v.reward_seq___):
-        v.outcome___ = 'C' #reward from correct sequence
-    elif withprob(v.background_reward_rate):
-        if choice == competitor.predict():
-            v.outcome___ = 'P' # predicted
-        else:
-            v.outcome___ = 'B' # reward from background for being unpredictable
+    
     if v.chosen_side___ =='L':
         hw.Rpoke.LED.off()
     else:
         hw.Lpoke.LED.off()
     hw.Cpoke.LED.on()
     goto_state('wait_for_outcome')
+
+def getOutcome():
+    ## set outcome variable
+    v.outcome___ = 'N' # not rewarded
+    if str(v.current_sequence[-len(v.reward_seq___):]) == str(v.reward_seq___):
+        v.outcome___ = 'C' #reward from correct sequence
+    elif withprob(v.background_reward_rate):
+        if v.chosen_side___ == competitor.predict():
+            v.outcome___ = 'P' # predicted
+        else:
+            v.outcome___ = 'B' # reward from background for being unpredictable
 
 def giveReward(side):
     if side =='R':
