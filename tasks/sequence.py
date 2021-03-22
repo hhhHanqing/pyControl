@@ -2,7 +2,7 @@ from pyControl.utility import *
 from pyControl.competitor import *
 import hardware_definition as hw
 
-version = 2021032100 ## YearMonthDayRevision YYYYMMDDrr  can have up to 100 revisions/day
+version = 2021032101 ## YearMonthDayRevision YYYYMMDDrr  can have up to 100 revisions/day
 states= [
     'wait_for_center',
     'wait_for_choice',
@@ -160,7 +160,7 @@ def wait_for_outcome(event):
         set_timer('blink_timer', 1000/v.time_blink_rate) # start blinking
         set_timer('side_delay_timer', v.side_delay___, output_event=True)
     elif event == 'C_nose': # abandon the choice (don't wait for outcome)
-        v.abandoned___ = True
+        v.abandoned___ = True   # better keep this variable for forward compatibility
         v.outcome___ == 'A'     # need to deal with this outcome in downstream code
         v.in_center___ = True
         publish_event('C_legit')    # ! no faultiness after abandonment C_nose
