@@ -2,7 +2,7 @@ from pyControl.utility import *
 from pyControl.competitor import *
 import hardware_definition as hw
 
-version = 2021032101 ## YearMonthDayRevision YYYYMMDDrr  can have up to 100 revisions/day
+version = 2021032102 ## YearMonthDayRevision YYYYMMDDrr  can have up to 100 revisions/day
 states= [
     'wait_for_center',
     'wait_for_choice',
@@ -174,6 +174,7 @@ def wait_for_outcome(event):
             hw.Rpoke.LED.toggle()
         set_timer('blink_timer', 1000/v.time_blink_rate)
     elif event == 'side_delay_timer': # side delay has expired, can now deliver reward and/or move on to next trial initiation
+        getOutcome()        # other outcomes can only occur if it is not abandoned trials
         if v.outcome___ == 'C':
             v.completed_sequences___ += 1
             if withprob(v.correct_reward_rate):
