@@ -27,7 +27,6 @@ events = [
 ####### Hidden script variables ##########
 v.trial_current_number___ = 0
 v.chosen_side___ = ''
-v.abandoned___ = False
 v.in_center___ = False
 v.hold_center___ = 0
 v.side_delay___ = 0
@@ -98,7 +97,6 @@ def run_start():
     set_timer('check_serial',10)
     hw.Camera.frame_grab_trigger.pulse(50) # trigger frame grab at 50Hz for 50fps video
     hw.Camera.light.on()
-    # hw.Camera.light.pulse(freq=5000,duty_cycle=50) # duty_cycle can be 10,25,50 or 75
 
 def wait_for_center(event):
     if event == 'entry':
@@ -119,13 +117,13 @@ def wait_for_center(event):
             v.consecutive_faulty___ = 0
             v.outcome___ = 'F'
             v.trial_current_number___ += 1
-            record_trial(chosen_side='R',was_abandoned=False,legitimate_trial=False)
+            record_trial(chosen_side='R',legitimate_trial=False)
     elif event == 'L_nose':
         if v.consecutive_faulty___ > 0 :
             v.consecutive_faulty___ = 0
             v.outcome___ = 'F'
             v.trial_current_number___ += 1
-            record_trial(chosen_side='L',was_abandoned=False,legitimate_trial=False)
+            record_trial(chosen_side='L',legitimate_trial=False)
     elif event == 'faultiness_expired': 
         try_center()
     # timer expiration events
@@ -147,21 +145,21 @@ def wait_for_choice(event):
         hw.Lpoke.LED.on()
         v.trial_current_number___ += 1
     elif event == 'R_nose':
-        getChoice('R')
+        submitChoice('R')
+        hw.Lpoke.LED.off()
     elif event == 'L_nose':
-        getChoice('L')
+        submitChoice('L')
+        hw.Rpoke.LED.off()
     elif event == 'exit':
         if v.tone_on:
             hw.Speakers.beep()
 
 def wait_for_outcome(event):
     if event == 'entry':
-        v.abandoned___ = False
         set_timer('blink_timer', 1000/v.time_blink_rate) # start blinking
         set_timer('side_delay_timer', v.side_delay___, output_event=True)
     elif event == 'C_nose': # abandon the choice (don't wait for outcome)
-        v.abandoned___ = True   # better keep this variable for forward compatibility
-        v.outcome___ == 'A'     # need to deal with this outcome in downstream code
+        v.outcome___ = 'A'     # need to deal with this outcome in downstream code
         v.in_center___ = True
         publish_event('C_legit')    # ! no faultiness after abandonment C_nose
         set_timer('held_long_enough',v.hold_center___, output_event=True) # create this timer. when it is done check if we're still inside the nosepoke, and if so then we've held our nose long enough and can move on to next state
@@ -187,43 +185,43 @@ def wait_for_outcome(event):
     elif event == 'exit':
         disarm_timer('blink_timer')
         disarm_timer('side_delay_timer')
-        record_trial(v.chosen_side___,v.abandoned___,True)
+        record_trial(v.chosen_side___, legitimate_trial=True)
 
 """
-There are 2 general outcomes, rewarded or not rewarded.
-There are 5 different paths for arriving at those outcomes.
-Below is the decision tree and descriptions of the 5 paths.
-*we added an 6th outcome that occurs from the rat's point of view when choosing a side after encountering a "faulty" nosepoke
+                                                                        ┌───────────────────────┐
+                                                                        │Previous Center Faulty?│
+                                                                        └──────────┬────────────┘
+                                NO   ┌───────────────────┐                   NO    │   YES
+ ┌───────────────────────────────────┤Waited for Outcome?│◄────────────────────────┴────────────┐
+ │                                   └──────────┬────────┘                                      │
+ │                                              │YES                                            │
+ │                                              │                                               │
+ │                                     ┌────────┴─────────┐                                     │
+ │                                     │Correct Sequence? │                                     │
+ │                                     └────────┬─────────┘                                     │
+ │                                              │                                               │
+ │      ┌─────────────────────────┐        NO   │   YES      ┌───────────────────────┐          │
+ │      │ Favorable outcome with  │◄────────────┴───────────►│Favorable outcome with │          │
+ │      │"background_reward_rate"?│                          │ "correct_reward_rate"?│          │
+ │      └─────────────┬───────────┘                          └───────────┬───────────┘          │
+ │                    │                                                  │                      │
+ │               NO   │   YES                                       NO   │   YES                │
+ │          ┌─────────┴───────────┐                             ┌────────┴─────────┐            │
+ │          │                     │                             │                  │            │
+ │          │                     ▼                             │                  │            │
+ │          │        ┌────────────────────────┐                 │                  │            │
+ │          │        │Predicted by competitor?│                 │                  │            │
+ │          │        └────────────┬───────────┘                 │                  │            │
+ │          │                     │                             │                  │            │
+ │          │                NO   │   YES                       │                  │            │
+ │          │             ┌───────┴────────┐                    │                  │            │
+ │          │             │                │                    │                  │            │
+ │          │             │                │                    │                  │            │
+ ▼          ▼             ▼                ▼                    ▼                  ▼            ▼
+'A'        'N'           'B'              'P'                  'W'                'C'          'F'
+                       Rewarded                                                 Rewarded
 
-                                                                Previous Center Faulty?
-                                                                          +
-                                                                    NO    |    YES
-                               Correct Sequence? <------------------------+------------+
-                                       +                                               |
-                                       |                                               |
-                                 NO    |    YES                                        |
- Favorable outcome with    <-----------+----------->  Favorable outcome with           |
-"background_reward_rate"?                              "correct_reward_rate"?          |
-             +                                                  +                      |
-             |                                                  |                      |
-   NO        |         YES                             NO       |       YES            |
-   +---------+-----------+                             +--------+---------+            |
-   |                     |                             |                  |            |
-   |                     |                             |                  |            |
-   |                     v                             |                  |            |
-   |         Predicted by competitor?                  |                  |            |
-   |                     +                             |                  |            |
-   |                     |                             |                  |            |
-   |             NO      |      YES                    |                  |            |
-   |             +-------+--------+                    |                  |            |
-   |             |                |                    |                  |            |
-   |             |                |                    |                  |            |
-   v             v                v                    v                  v            v
-
-  'N'           'B'              'P'                  'W'                'C'          'F'
-              Rewarded                                                 Rewarded
-
-
+A: abandoned
 N: not rewarded
 B: background rewarded
 P: predicted
@@ -274,17 +272,13 @@ def start_new_block ():
 
     print('NB,{},{},{}'.format(v.reward_seq___,v.trials_until_change,next_seq))
 
-def getChoice(choice):
+def submitChoice(choice):
     v.current_sequence = v.current_sequence[1:] + choice
     v.chosen_side___ = choice
 
     updateHold()
     updateSide()
     
-    if v.chosen_side___ =='L':
-        hw.Rpoke.LED.off()
-    else:
-        hw.Lpoke.LED.off()
     hw.Cpoke.LED.on()
     goto_state('wait_for_outcome')
 
@@ -317,13 +311,10 @@ def updateSide():
     else:
         v.side_delay___ = min(v.side_delay_start + v.trial_current_number___ * v.side_delay_increment, v.side_delay_max )
 
-def record_trial(chosen_side,was_abandoned,legitimate_trial):
-    print('rslt,{},{},{},{},{},{},{},{},{},{},{}'.format(v.trial_current_number___,v.reward_seq___,chosen_side,v.outcome___,int(was_abandoned),v.reward_volume,v.time_hold_center,v.time_side_delay,v.faulty_chance,v.max_consecutive_faulty,v.faulty_time_limit))
+def record_trial(chosen_side,legitimate_trial):
+    print('rslt,{},{},{},{},{},{},{},{},{},{}'.format(v.trial_current_number___,v.reward_seq___,chosen_side,v.outcome___,v.reward_volume,v.time_hold_center,v.time_side_delay,v.faulty_chance,v.max_consecutive_faulty,v.faulty_time_limit))
     if legitimate_trial: ## if the choice came after an legitimate center nosepoke, not a faulty one. In other words, it was a true trial, not just a rat perceived trial.
-        if was_abandoned:
-            competitor.update_competitor(chosen_side,False) 
-        else:
-            competitor.update_competitor(chosen_side,v.outcome___)
+        competitor.update_competitor(chosen_side,v.outcome___)
         v.trials_until_change += -1
         if v.trials_until_change<=0:
             start_new_block()

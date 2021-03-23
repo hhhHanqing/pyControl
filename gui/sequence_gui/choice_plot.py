@@ -75,7 +75,7 @@ class Sequence_Plot():
             n_new = len(outcome_msgs)
             self.data = np.roll(self.data, -n_new, axis=0)
             for i, ne in enumerate(outcome_msgs):
-                trial_num_string,self.reward_seq,choice,outcome,abandoned,reward_vol,center_hold,side_delay,faulty_chance,faulty_maxcount,faulty_time_limit = ne[-1].split(',')[1:]
+                trial_num_string,self.reward_seq,choice,outcome,reward_vol,center_hold,side_delay,faulty_chance,faulty_maxcount,faulty_time_limit = ne[-1].split(',')[1:]
                 self.trial_num = int(trial_num_string)
                 if choice == 'L':
                     if self.last_choice == 'L':
@@ -97,30 +97,26 @@ class Sequence_Plot():
                 if outcome == 'C': # was rewarded
                     self.rewarded_trials += 1
                     color = 0
+                    symbol = 2 #square
                 elif outcome == 'W': # correct sequence, but rewared was withheld
                     color = 4
+                    symbol = 2 #square
                 elif outcome == 'N' or outcome == 'P': # was not rewarded
                     color = 1
+                    symbol = 2 #square
                 elif outcome == 'B': # background reward
                     color = 2
-
-                if abandoned=='1':
-                    symbol = 3
-                    if color == 0:
-                        color = 4 
-                    elif color == 2:
-                        color = 5
-                else:
-                    symbol = 2
-
-                if outcome == 'F': # this "rat percieved trial" occured after a faulty nosepoke
+                    symbol = 2 #square
+                elif outcome == 'A': # abandoned trial
+                    color = 1
+                    symbol = 3 #triangle
+                elif outcome == 'F': # this "rat percieved trial" occured after a faulty nosepoke
                     color = 3
                     symbol = 0
                     self.next_block_start +=1
                     self.new_bout_line.setValue(self.next_block_start)
                     self.bout_text.setPos(self.next_block_start, self.bout_info_ylocation)
                     self.bout_text.setText(str(self.next_block_start - self.trial_num))
-
                     
                 self.data[-n_new+i,0] = self.trial_num
                 self.data[-n_new+i,1] = side
