@@ -3,8 +3,9 @@ import pandas as pd
 import numpy as np
 import os
 from config.paths import dirs
+from tools.taskversion_spec import get_rslt_data
 
-cleaner_version = 2021031902 ## YearMonthDayRevision YYYYMMDDrr  can have up to 100 revisions/day
+cleaner_version = 2021032600 ## YearMonthDayRevision YYYYMMDDrr  can have up to 100 revisions/day
 
 class Log_cleaner():
     def __init__(self,file_path):
@@ -57,19 +58,11 @@ class Log_cleaner():
             else:
                 self.new_bout_data = print_DF.iloc[:,0:5].copy()
                 self.new_bout_data = self.new_bout_data[new_bout_mask]
-                self.new_bout_data.rename(columns={1:'Reward_seq',2:'Bout_length',3:'Next_seq'},inplace=True)
+                self.new_bout_data.rename(columns={1:'Reward_seq',2:'Bout_length',3:'Next_seq'},inplace=True)       # ! these 1, 2, 3 are old column names rather than column numbers
             self.new_bout_data.reset_index(drop=True,inplace=True)
 
         rslt_mask = print_DF['Msg']=='rslt'
-        self.rslt_data = print_DF[rslt_mask].copy()
-        if task == 'markov':
-            self.rslt_data.rename(columns={1:'Trial',2:'Left_prob',3:'Right_prob',4:'Choice_ltr',5:'Outcome',6:'LaserTrial'},inplace=True)
-        elif task == 'sequence':
-            if sum(rslt_mask) == 0:
-                self.rslt_data = pd.DataFrame(columns=['Timestamp', 'Msg', 'Trial', 'Seq_raw', 'Choice_ltr', 'Outcome', 'Abandoned', 'Reward_vol', 'Center_hold', 'Side_delay', 'Faulty_chance', 'Max_consecutive_faulty', 'Faulty_time_limit'])
-            else:
-                self.rslt_data.rename(columns={1:'Trial',2:'Seq_raw',3:'Choice_ltr',4:'Outcome',5:'Abandoned',6:'Reward_vol',7:'Center_hold',8:'Side_delay',9:'Faulty_chance',10:'Max_consecutive_faulty',11:'Faulty_time_limit'},inplace=True)
-        self.rslt_data.reset_index(drop=True,inplace=True)
+        self.rslt_data = get_rslt_data(print_DF[rslt_mask].copy(), task, self.task_version)
 
     def expand_results(self,task):
         right_mask = self.rslt_data['Choice_ltr']=='R'
@@ -104,28 +97,24 @@ class Log_cleaner():
             self.combined = pd.concat([self.rslt_data, outcome_truth_table], axis=1)
 
         elif task == 'sequence':
-            self.rslt_data.drop(columns=['Timestamp','Msg'],inplace=True)
+            self.rslt_data.drop(columns=['Msg'],inplace=True)
             if len(self.rslt_data) == 0:        # directly creat empty self.combined with the same structure
-               self.combined = pd.DataFrame(columns=['Trial','Reward_vol','Center_hold','Side_delay','Faulty_chance','Max_consecutive_faulty','Faulty_time_limit','Seq_raw','Seq_int','Seq_length','Choice_ltr','Outcome','Left_choice','Seq_completed','Abandoned','Reward_dispensed','Faulty_choice'])
+               self.combined = pd.DataFrame(columns=['Trial','Reward_vol','Center_hold','Side_delay','Faulty_chance','Max_consecutive_faulty','Faulty_time_limit','Seq_raw','Seq_int','Seq_length','Choice_ltr','Outcome','Left_choice','Reward_dispensed','Faulty_choice'])
                return
-
-            abandoned_mask = self.rslt_data['Abandoned']=='1'
-            self.rslt_data['Abandoned'] = self.rslt_data['Abandoned'].astype(np.int64)
 
             nothing_mask     = self.rslt_data['Outcome']=='N'
             background_mask  = self.rslt_data['Outcome']=='B' # rewarded
             predicted_mask   = self.rslt_data['Outcome']=='P'
             withheld_mask    = self.rslt_data['Outcome']=='W'
             correct_mask     = self.rslt_data['Outcome']=='C' # rewarded
-            faulty_mask      = self.rslt_data['Outcome']=='F' 
+            abandoned_mask   = self.rslt_data['Outcome']=='A' 
+            faulty_mask      = self.rslt_data['Outcome']=='F'
+            
+            reward_dispensed_mask = correct_mask|background_mask
+            
+            outcome_truth_table = pd.DataFrame(np.zeros((len(self.rslt_data), 5),dtype=int),
+                        columns=['Seq_int','Seq_length','Left_choice','Reward_dispensed','Faulty_choice'])
 
-            correct_sequence_mask = withheld_mask|correct_mask
-            reward_dispensed_mask = (correct_mask|background_mask)&~abandoned_mask
-
-            outcome_truth_table = pd.DataFrame(np.zeros((len(self.rslt_data), 6),dtype=int),
-                        columns=['Seq_int','Seq_length','Left_choice','Seq_completed','Reward_dispensed','Faulty_choice'])
-
-            outcome_truth_table.loc[correct_sequence_mask,'Seq_completed']=1
             outcome_truth_table.loc[reward_dispensed_mask,'Reward_dispensed']=1
             outcome_truth_table.loc[left_mask,'Left_choice']=1
             outcome_truth_table.loc[faulty_mask,'Faulty_choice']=1
@@ -138,7 +127,7 @@ class Log_cleaner():
             outcome_truth_table['Seq_length'] = self.rslt_data['Seq_raw'].apply(len)
 
             self.combined = pd.concat([self.rslt_data, outcome_truth_table], axis=1)
-            self.combined = self.combined[['Trial','Reward_vol','Center_hold','Side_delay','Faulty_chance','Max_consecutive_faulty','Faulty_time_limit','Seq_raw','Seq_int','Seq_length','Choice_ltr','Outcome','Left_choice','Seq_completed','Abandoned','Reward_dispensed','Faulty_choice']] # reorder columns
+            self.combined = self.combined[['Trial','Reward_vol','Center_hold','Side_delay','Faulty_chance','Max_consecutive_faulty','Faulty_time_limit','Seq_raw','Seq_int','Seq_length','Choice_ltr','Outcome','Left_choice','Reward_dispensed','Faulty_choice']] # reorder columns
     
     def save_json(self):
         import json
@@ -192,3 +181,10 @@ class Log_cleaner():
         import shutil
         text_in_raw_folder = os.path.join(self.data_folder_path,str(self.session.subject_ID),"pyControl_"+self.session_name+".txt")
         shutil.move(self.txt_file,text_in_raw_folder)
+
+    def messed_timestamp_alert(self):
+        # level-1: timestamp monotony
+        # level-2: state transition legality
+        # level-3: other abnormal situations
+        pass
+    

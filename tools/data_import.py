@@ -82,6 +82,9 @@ class Session():
                       for event_name in ID2name.values()}
 
         self.print_lines = [line[2:] for line in all_lines if line[0]=='P']
+        
+        self.state_IDs = state_IDs
+        self.event_IDs = event_IDs
 
 #----------------------------------------------------------------------------------
 # Experiment class
